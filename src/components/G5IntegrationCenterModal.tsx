@@ -19,8 +19,10 @@ import {
   RefreshCw, 
   Download, 
   Cpu,
-  BookmarkCheck
+  BookmarkCheck,
+  Radio
 } from 'lucide-react';
+import G5ApiMonitorDashboard from './G5ApiMonitorDashboard';
 
 interface G5IntegrationCenterModalProps {
   isOpen: boolean;
@@ -64,7 +66,7 @@ export default function G5IntegrationCenterModal({
   const [localUser, setLocalUser] = useState(g5DbUser);
   const [localPassword, setLocalPassword] = useState(g5DbPassword);
 
-  const [activeSubTab, setActiveSubTab] = useState<'settings' | 'diagnostics' | 'guide'>('settings');
+  const [activeSubTab, setActiveSubTab] = useState<'settings' | 'diagnostics' | 'monitor' | 'guide'>('settings');
 
   // Copy States
   const [copiedBridge, setCopiedBridge] = useState(false);
@@ -451,6 +453,21 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
           </button>
 
           <button
+            onClick={() => setActiveSubTab('monitor')}
+            className={`py-3.5 font-bold relative transition-colors focus:outline-none cursor-pointer ${
+              activeSubTab === 'monitor' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <div className="flex items-center gap-1.5">
+              <Radio className={`w-4 h-4 ${activeSubTab === 'monitor' ? 'text-blue-600 animate-pulse' : ''}`} />
+              <span>실시간 API 모니터링 대시보드</span>
+            </div>
+            {activeSubTab === 'monitor' && (
+              <motion.div layoutId="g5TabUnderline" className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
+            )}
+          </button>
+
+          <button
             onClick={() => setActiveSubTab('guide')}
             className={`py-3.5 font-bold relative transition-colors focus:outline-none cursor-pointer ${
               activeSubTab === 'guide' ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
@@ -728,18 +745,51 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
 
               {/* Troubleshooting helper on fail */}
               {diagnosticState === 'failed' && (
-                <div className="p-4 rounded-2xl border border-rose-100 bg-rose-50/10 text-left space-y-1.5 animate-pulse">
-                  <div className="text-[11px] font-black text-rose-700 flex items-center gap-1 font-sans">
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>CORS 오류 및 인바운드 DB 단절 시 조치 리포트</span>
+                <div className="p-5 rounded-2xl border border-rose-200 bg-rose-50/20 text-left space-y-3">
+                  <div className="flex items-center gap-2 text-rose-700 font-black text-xs font-sans">
+                    <AlertCircle className="w-5 h-5 shrink-0 text-rose-600 animate-bounce" />
+                    <span>🚨 CORS 통신 장애 및 인바운드 DB 단절 긴급 진단 통제 선언</span>
                   </div>
-                  <p className="text-[10.5px] text-gray-600 font-semibold leading-relaxed">
-                    실제 독립 호스팅 환경(가비아, 카페24 등 AWS)에서는 보안상 외부 웹 연동을 원천 통제하는 경우가 다수 발생합니다.
-                    따라서 그누보드 서버에 보관해 두신 PHP 브릿지 스크립트 파일의 최상단에 <code>header("Access-Control-Allow-Origin: *");</code> 가 성문화되어 선언되어 있는지 철저히 검사해 주십시오.
-                  </p>
+                  
+                  <div className="space-y-2 text-[11px] text-gray-700 leading-relaxed font-medium">
+                    <p>
+                      가비아(Gabia), 카페24(Cafe24), AWS RDS 등 실제 상용 외부 호스팅 서버에서는 <strong>웹 공격/불법 인바운드 무단 전송</strong> 차단 목적으로 외부 웹 어플리케이션과의 원천 교차 통신(Cross-Origin Resource Sharing)을 봉쇄하거나 3306 포트를 기본적으로 굳게 폐쇄해 놓는 경우가 태반입니다.
+                    </p>
+                    
+                    <div className="p-3 bg-rose-100/50 border border-rose-200/50 rounded-xl space-y-2 text-rose-900 font-bold">
+                      <div>💡 핵심 해결 방법 (PHP Bridge 소스 최상단에 반드시 선언) :</div>
+                      <p className="text-[10px] text-gray-500 font-semibold leading-relaxed">
+                        그누보드5 서버에 업로드하신 <code className="bg-white/80 px-1 py-0.5 rounded text-rose-600 font-mono text-[9.5px]">sync_bridge.php</code> 파일의 소스코드 <span className="text-rose-700 font-black">맨 처음 줄(PHP 선언식 바로 다음 위치)</span>에 아래의 CORS 허용 구문이 포함되어 작동하는지 철저하게 교차 검인하고 수정해 주십시오.
+                      </p>
+                      <pre className="p-2.5 bg-slate-900 text-yellow-400 rounded-lg font-mono text-[9.5px] overflow-x-auto">
+{`<?php
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: Authorization, Content-Type");
+header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
+                      </pre>
+                    </div>
+
+                    <ul className="list-disc pl-4 space-y-1 text-gray-600">
+                      <li><strong>가비아 / 카페24 DB 원격 설정:</strong> DB 관리 패널에 진입하여 외부 IP 접근 허용(<code className="bg-slate-100 font-mono text-[9.5px] px-1 text-gray-700">%</code> 와일드카드 또는 개별 화이트리스트 지정) 처리를 기여해야 외부 통계 소켓이 성립됩니다.</li>
+                      <li><strong>백업 통제 우회:</strong> 호스팅 서버의 물리적 하이퍼레이어가 완전히 차단되어 연동 통신이 정합되지 못하더라도, 본 시스템은 로컬 샌드박스 데이터셋을 안전하게 기동하여 가상의 신속 ERP 관리 업무를 온전히 수속할 수 있도록 견인합니다.</li>
+                    </ul>
+                  </div>
                 </div>
               )}
 
+            </div>
+          )}
+
+          {/* TAB: Real-time API Monitor */}
+          {activeSubTab === 'monitor' && (
+            <div className="max-w-4xl mx-auto">
+              <G5ApiMonitorDashboard
+                g5ApiUrl={localUrl}
+                g5ApiKey={localKey}
+                g5DbHost={localHost}
+                g5DbName={localName}
+                g5DbUser={localUser}
+              />
             </div>
           )}
 

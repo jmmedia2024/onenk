@@ -382,33 +382,33 @@ export default function G5DiagnosticMonitor({
         </div>
 
         {/* Mini diagnostics guide console */}
-        <div className="lg:col-span-4 p-4 rounded-2xl border border-gray-100 bg-slate-50/30 flex flex-col justify-between space-y-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-1">
-              <Terminal className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-[11px] font-black text-gray-800">오정합 및 단절 시 체크가이드</span>
+        <div className="lg:col-span-4 p-4 rounded-2xl border border-gray-150 bg-slate-50/30 flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-1 border-b border-gray-200 pb-1.5">
+              <Terminal className="w-4 h-4 text-rose-500 animate-pulse" />
+              <span className="text-[11px] font-black text-gray-900">독립 호스팅(가비아/Cafe24) 점검 리포트</span>
             </div>
             
-            <ul className="space-y-2 text-[10.5px] text-gray-600 font-semibold leading-relaxed leading-none pl-1">
+            <ul className="space-y-2 text-[10px] text-gray-700 font-semibold leading-relaxed pl-1">
               <li className="flex items-start gap-1">
-                <span className="text-blue-500 font-black shrink-0 mt-0.5">·</span>
-                <span><strong>CORS 허가 여부:</strong> PHP 연동 파일의 위쪽 헤더에 Access Allow 문장이 기입되었는가?</span>
+                <span className="text-rose-500 font-black shrink-0">·</span>
+                <span><strong>CORS 허가 선언:</strong> PHP 파일 최상단에 <code className="bg-white px-1 py-0.5 rounded text-rose-600 font-mono text-[9px]">header("Access-Control-Allow-Origin: *");</code> 선언문이 반드시 성문화되어 기입되어야 브라우저 보안 규정을 완벽하게 돌파합니다.</span>
               </li>
               <li className="flex items-start gap-1">
-                <span className="text-blue-500 font-black shrink-0 mt-0.5">·</span>
-                <span><strong>보안 인증키 일치:</strong> React Admin 변수와 PHP 내 <code>$token</code> 변수가 같은가?</span>
+                <span className="text-rose-500 font-black shrink-0">·</span>
+                <span><strong>네트워크 봉쇄 돌파:</strong> 호스팅 서버의 물리 방화벽 설정으로 3306 포트나 REST 웹 접근이 원천 폐쇄되지 않았는지 고객 센터에 인바운드 예외 허용을 의청하십시오.</span>
               </li>
               <li className="flex items-start gap-1">
-                <span className="text-blue-500 font-black shrink-0 mt-0.5">·</span>
-                <span><strong>DB 소켓 점검:</strong> MySQL Host 주소가 그누보드 가용 호스팅 주기로 올바른가?</span>
+                <span className="text-rose-500 font-black shrink-0">·</span>
+                <span><strong>인증키 일치 보장:</strong> ERP 센터에서 생성한 API 키 Bearer 토큰과 PHP 내 <code className="font-mono text-gray-600 text-[9px]">API_SECRET_TOKEN</code> 문자열이 글자 하나 빠짐 없이 완전히 일치해야 응답이 개방됩니다.</span>
               </li>
             </ul>
           </div>
 
-          <div className="p-3 bg-blue-50 border border-blue-100/50 rounded-xl flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
-            <p className="text-[10px] text-blue-800 font-bold">
-              진단을 성사하지 못하더라도, 원격 DB가 오프라인 시연일 때 Sandbox Auto Mock 데이터로 완벽 구제 우회 동작을 발효합니다.
+          <div className="p-3 bg-rose-50 border border-rose-100/50 rounded-xl flex items-start gap-2">
+            <Sparkles className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5 animate-bounce" />
+            <p className="text-[9.5px] text-rose-900 font-bold leading-normal">
+              연동이 거절되거나 오프라인 시연일 때도 당사는 Sandbox Auto Mock 엔진을 가동해 정회원 입금, 마당 쿼리를 결함 없이 완벽 구제 작동시킵니다.
             </p>
           </div>
         </div>

@@ -213,8 +213,9 @@ export default function CommunitySection({
                 <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
                 COMMUNICATION HUB
               </span>
-              <h3 className="font-extrabold text-gray-950 text-sm">
-                소통 게시판 채널
+              <h3 className="font-extrabold text-gray-950 text-sm flex items-center gap-1.5">
+                <MessageSquare className="w-4 h-4 text-blue-600" />
+                <span>소통 게시판 채널</span>
               </h3>
             </div>
             
@@ -231,7 +232,7 @@ export default function CommunitySection({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-8.5 h-8.5 rounded-lg shrink-0 flex items-center justify-center border transition-all duration-200 ${
-                    activeBoard === 'free' ? 'bg-blue-600 border-blue-600 text-white shadow-3xs' : 'bg-white border-gray-150 text-gray-400 group-hover:text-gray-700'
+                    activeBoard === 'free' ? 'bg-blue-600 border-blue-600 text-white shadow-3xs' : 'bg-blue-50 border-blue-100 text-blue-600 group-hover:bg-blue-100/50'
                   }`}>
                     <MessageSquare className="w-4 h-4" />
                   </div>
@@ -266,7 +267,7 @@ export default function CommunitySection({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-8.5 h-8.5 rounded-lg shrink-0 flex items-center justify-center border transition-all duration-200 ${
-                    activeBoard === 'qna' ? 'bg-teal-600 border-teal-600 text-white shadow-3xs' : 'bg-white border-gray-150 text-gray-400 group-hover:text-gray-700'
+                    activeBoard === 'qna' ? 'bg-teal-600 border-teal-600 text-white shadow-3xs' : 'bg-teal-50 border-teal-100 text-teal-600 group-hover:bg-teal-100/50'
                   }`}>
                     <HelpCircle className="w-4 h-4" />
                   </div>
@@ -301,7 +302,7 @@ export default function CommunitySection({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-8.5 h-8.5 rounded-lg shrink-0 flex items-center justify-center border transition-all duration-200 ${
-                    activeBoard === 'notice' ? 'bg-amber-600 border-amber-600 text-white shadow-3xs' : 'bg-white border-gray-150 text-gray-400 group-hover:text-gray-700'
+                    activeBoard === 'notice' ? 'bg-amber-600 border-amber-600 text-white shadow-3xs' : 'bg-amber-50 border-amber-100 text-amber-600 group-hover:bg-amber-100/50'
                   }`}>
                     <Bell className="w-4 h-4" />
                   </div>
@@ -336,7 +337,7 @@ export default function CommunitySection({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className={`w-8.5 h-8.5 rounded-lg shrink-0 flex items-center justify-center border transition-all duration-200 ${
-                    activeBoard === 'private' ? 'bg-purple-600 border-purple-600 text-white shadow-3xs' : 'bg-white border-gray-150 text-gray-400 group-hover:text-purple-600/80'
+                    activeBoard === 'private' ? 'bg-purple-600 border-purple-600 text-white shadow-3xs' : 'bg-purple-50 border-purple-100 text-purple-600 group-hover:bg-purple-100/50'
                   }`}>
                     <Lock className="w-4 h-4" />
                   </div>

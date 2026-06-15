@@ -170,31 +170,31 @@ export default function AboutSection({ greeting, purpose, orgCustom, location }:
             >
               {tab === 'greet' && (
                 <>
-                  <Users className={`w-4.5 h-4.5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <Users className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-sky-600' : 'text-sky-400'}`} />
                   <span className="text-[10px] md:text-xs tracking-tight">인사말</span>
                 </>
               )}
               {tab === 'purpose' && (
                 <>
-                  <Target className={`w-4.5 h-4.5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <Target className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-rose-600' : 'text-rose-400'}`} />
                   <span className="text-[10px] md:text-xs tracking-tight">비전/목적</span>
                 </>
               )}
               {tab === 'org' && (
                 <>
-                  <Compass className={`w-4.5 h-4.5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <Compass className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-emerald-600' : 'text-emerald-400'}`} />
                   <span className="text-[10px] md:text-xs tracking-tight">조직도</span>
                 </>
               )}
               {tab === 'location' && (
                 <>
-                  <MapPin className={`w-4.5 h-4.5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <MapPin className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-amber-600' : 'text-amber-500'}`} />
                   <span className="text-[10px] md:text-xs tracking-tight">오시는길</span>
                 </>
               )}
               {tab === 'bylaws' && (
                 <>
-                  <FileText className={`w-4.5 h-4.5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  <FileText className={`w-4.5 h-4.5 transition-colors ${isActive ? 'text-purple-600' : 'text-purple-400'}`} />
                   <span className="text-[10px] md:text-xs tracking-tight">단체정관</span>
                 </>
               )}
