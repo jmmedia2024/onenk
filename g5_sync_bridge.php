@@ -297,6 +297,112 @@ switch ($action) {
         }
         break;
 
+    // [Action G] 그누보드5 회원 가입 처리 (React DB Sign Up Sync)
+    case 'register_member':
+        $mb_id = isset($input_data['mb_id']) ? trim($input_data['mb_id']) : '';
+        $mb_password = isset($input_data['mb_password']) ? $input_data['mb_password'] : '';
+        $mb_name = isset($input_data['mb_name']) ? trim($input_data['mb_name']) : '';
+        $mb_nick = isset($input_data['mb_nick']) ? trim($input_data['mb_nick']) : '';
+        $mb_email = isset($input_data['mb_email']) ? trim($input_data['mb_email']) : '';
+        $mb_tel = isset($input_data['mb_tel']) ? trim($input_data['mb_tel']) : '';
+
+        if (empty($mb_id) || empty($mb_password) || empty($mb_name) || empty($mb_nick)) {
+            http_response_code(400);
+            echo json_encode(["status" => "error", "message" => "필수 가입 정보(아이디, 패스워드, 이름, 닉네임)가 누락되었습니다."], JSON_UNESCAPED_UNICODE);
+            exit();
+        }
+
+        try {
+            // 1. 아이디 중복 체크
+            $chk1 = $pdo->prepare("SELECT COUNT(*) as cnt FROM `g5_member` WHERE mb_id = ?");
+            $chk1->execute([$mb_id]);
+            if ($chk1->fetch()['cnt'] > 0) {
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "이미 존재하는 아이디입니다."], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+
+            // 2. 닉네임 중복 체크
+            $chk2 = $pdo->prepare("SELECT COUNT(*) as cnt FROM `g5_member` WHERE mb_nick = ?");
+            $chk2->execute([$mb_nick]);
+            if ($chk2->fetch()['cnt'] > 0) {
+                http_response_code(400);
+                echo json_encode(["status" => "error", "message" => "이미 사용 중인 닉네임입니다."], JSON_UNESCAPED_UNICODE);
+                exit();
+            }
+
+            // 3. 비밀번호 암호화 (Bcrypt 적용)
+            $hashed_pass = password_hash($mb_password, PASSWORD_BCRYPT);
+
+            // 4. 스키마 안전 대조 및 동적 바인딩 컬럼 탐색 (SHOW COLUMNS 수임)
+            $desc_stmt = $pdo->query("SHOW COLUMNS FROM `g5_member`");
+            $existing_cols = [];
+            while ($row = $desc_stmt->fetch(PDO::FETCH_ASSOC)) {
+                $existing_cols[] = $row['Field'];
+            }
+
+            // 그누보드 표준 필드 디폴트 매핑 구성
+            $candidate_data = [
+                'mb_id' => $mb_id,
+                'mb_password' => $hashed_pass,
+                'mb_name' => $mb_name,
+                'mb_nick' => $mb_nick,
+                'mb_email' => $mb_email,
+                'mb_tel' => $mb_tel,
+                'mb_hp' => $mb_tel,
+                'mb_level' => 2, // 일반 가입회원 수준 (2레벨)
+                'mb_datetime' => date("Y-m-d H:i:s"),
+                'mb_nick_date' => date("Y-m-d"),
+                'mb_open' => 1,
+                'mb_open_date' => date("Y-m-d"),
+                'mb_today_login' => date("Y-m-d H:i:s"),
+                'mb_login_ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'mb_ip' => $_SERVER['REMOTE_ADDR'] ?? '127.0.0.1',
+                'mb_mailling' => 1,
+                'mb_sms' => 1,
+                'mb_birth' => '',
+                'mb_sex' => '',
+                'mb_signature' => '',
+                'mb_memo' => '',
+                'mb_profile' => '',
+                'mb_recommend' => '',
+                'mb_point' => 1000 // 가입 감사 포인트 1,000점 증정
+            ];
+
+            $filtered_data = [];
+            foreach ($candidate_data as $key => $val) {
+                if (in_array($key, $existing_cols)) {
+                    $filtered_data[$key] = $val;
+                }
+            }
+
+            // SQL 쿼리 빌드
+            $cols = array_keys($filtered_data);
+            $escape_cols = array_map(function($c) { return "`$c`"; }, $cols);
+            $placeholders = array_fill(0, count($cols), '?');
+
+            $insert_sql = "INSERT INTO `g5_member` (" . implode(', ', $escape_cols) . ") VALUES (" . implode(', ', $placeholders) . ")";
+            $stmt = $pdo->prepare($insert_sql);
+            $stmt->execute(array_values($filtered_data));
+
+            echo json_encode([
+                "status" => "success",
+                "message" => "그누보드 회원가입 성공!",
+                "data" => [
+                    "mb_id" => $mb_id,
+                    "mb_name" => $mb_name,
+                    "mb_nick" => $mb_nick,
+                    "mb_level" => 2,
+                    "mb_email" => $mb_email
+                ]
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        } catch (PDOException $ex) {
+            http_response_code(500);
+            echo json_encode(["status" => "error", "message" => "회원가입 처리 중 데이터베이스 오류가 발생했습니다: " . $ex->getMessage()], JSON_UNESCAPED_UNICODE);
+        }
+        break;
+
     // [Action C] 후원 신청 연합 회원 등급 일괄 자동 등급 상향 조정 (G5 User Level Promote)
     case 'promote_member':
         $mb_id = isset($input_data['mb_id']) ? trim($input_data['mb_id']) : '';
