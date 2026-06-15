@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Newspaper, Calendar, ArrowUpRight, Search, Eye, X, Layers } from 'lucide-react';
+import { Camera, Newspaper, Calendar, ArrowUpRight, Search, Eye, X, Layers, Share2, Link2, MessageCircle } from 'lucide-react';
 
 interface GalleryItem {
   id: string;
@@ -16,6 +16,7 @@ export default function NewsSection() {
   const [filter, setFilter] = useState<'all' | 'press' | 'gallery'>('all');
   const [search, setSearch] = useState('');
   const [selectedItem, setSelectedItem] = useState<GalleryItem | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const defaultGalleryItems: GalleryItem[] = [
     {
@@ -80,23 +81,23 @@ export default function NewsSection() {
     }
   ];
 
-  // Dynamically load merged items from central bukmin_posts_v1 with categories 'press' and 'gallery'
+  // Dynamically load merged items from central bukmin_posts_v1 with categories 'press', 'news' and 'gallery'
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>(() => {
     const saved = localStorage.getItem('bukmin_posts_v1');
     if (saved) {
       try {
         const posts: any[] = JSON.parse(saved);
         const dynamicItems = posts
-          .filter(p => p.type === 'press' || p.type === 'gallery')
+          .filter(p => p.type === 'press' || p.type === 'news' || p.type === 'gallery')
           .map(p => ({
             id: p.id,
-            category: p.type as 'press' | 'gallery',
+            category: (p.type === 'press' || p.type === 'news') ? 'press' : 'gallery',
             title: p.title,
             date: p.date,
             description: p.content,
             views: p.views || 0,
             tags: p.tags || ['그누보드', '실시간연계'],
-            imagePlaceholderColor: p.imagePlaceholderColor || (p.type === 'press' ? 'from-amber-400 to-rose-500' : 'from-blue-400 to-indigo-600')
+            imagePlaceholderColor: p.imagePlaceholderColor || (p.type === 'press' || p.type === 'news' ? 'from-amber-400 to-rose-500' : 'from-blue-400 to-indigo-600')
           }));
 
         if (dynamicItems.length > 0) {
@@ -119,16 +120,16 @@ export default function NewsSection() {
         try {
           const posts: any[] = JSON.parse(saved);
           const dynamicItems = posts
-            .filter(p => p.type === 'press' || p.type === 'gallery')
+            .filter(p => p.type === 'press' || p.type === 'news' || p.type === 'gallery')
             .map(p => ({
               id: p.id,
-              category: p.type as 'press' | 'gallery',
+              category: (p.type === 'press' || p.type === 'news') ? 'press' : 'gallery',
               title: p.title,
               date: p.date,
               description: p.content,
               views: p.views || 0,
               tags: p.tags || ['그누보드', '실시간연계'],
-              imagePlaceholderColor: p.imagePlaceholderColor || (p.type === 'press' ? 'from-amber-400 to-rose-500' : 'from-blue-400 to-indigo-600')
+              imagePlaceholderColor: p.imagePlaceholderColor || (p.type === 'press' || p.type === 'news' ? 'from-amber-400 to-rose-500' : 'from-blue-400 to-indigo-600')
             }));
           const uniqueTitles = new Set(dynamicItems.map(item => item.title));
           const remainingDefaults = defaultGalleryItems.filter(item => !uniqueTitles.has(item.title));
@@ -139,6 +140,98 @@ export default function NewsSection() {
       }
     };
     handleSync();
+    
+    // 🌐 HTTP Live GnuBoard5 API Fetcher for news and gallery boards
+    const fetchG5Data = async () => {
+      const g5ApiUrl = localStorage.getItem('bukmin_g5_api_url') || '';
+      const g5ApiKey = localStorage.getItem('bukmin_g5_api_key') || '';
+      const g5DbHost = localStorage.getItem('bukmin_g5_db_host') || '';
+      const g5DbName = localStorage.getItem('bukmin_g5_db_name') || '';
+
+      if (!g5ApiUrl) return;
+
+      try {
+        // 1. Fetch news board posts (공식 보도자료)
+        const newsResponse = await fetch(g5ApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${g5ApiKey}`
+          },
+          body: JSON.stringify({
+            action: 'get_latest_posts',
+            bo_table: 'news',
+            limit: 15,
+            db_host: g5DbHost,
+            db_name: g5DbName
+          })
+        });
+
+        // 2. Fetch gallery board posts (활동 갤러리)
+        const galleryResponse = await fetch(g5ApiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${g5ApiKey}`
+          },
+          body: JSON.stringify({
+            action: 'get_latest_posts',
+            bo_table: 'gallery',
+            limit: 15,
+            db_host: g5DbHost,
+            db_name: g5DbName
+          })
+        });
+
+        let fetchedItems: GalleryItem[] = [];
+
+        if (newsResponse.ok) {
+          const newsData = await newsResponse.json();
+          if (newsData.status === 'success' && Array.isArray(newsData.data)) {
+            const mappedNews = newsData.data.map((p: any) => ({
+              id: `g5_news_${p.wr_id}`,
+              category: 'press' as const,
+              title: p.wr_subject,
+              date: p.wr_datetime ? p.wr_datetime.substring(0, 10) : '2026-06-14',
+              description: p.wr_content,
+              views: parseInt(p.wr_hit) || 0,
+              tags: ['그누보드', 'news'],
+              imagePlaceholderColor: 'from-amber-400 to-rose-500'
+            }));
+            fetchedItems = [...fetchedItems, ...mappedNews];
+          }
+        }
+
+        if (galleryResponse.ok) {
+          const galleryData = await galleryResponse.json();
+          if (galleryData.status === 'success' && Array.isArray(galleryData.data)) {
+            const mappedGallery = galleryData.data.map((p: any) => ({
+              id: `g5_gallery_${p.wr_id}`,
+              category: 'gallery' as const,
+              title: p.wr_subject,
+              date: p.wr_datetime ? p.wr_datetime.substring(0, 10) : '2026-06-14',
+              description: p.wr_content,
+              views: parseInt(p.wr_hit) || 0,
+              tags: ['그누보드', 'gallery'],
+              imagePlaceholderColor: 'from-emerald-400 to-teal-600'
+            }));
+            fetchedItems = [...fetchedItems, ...mappedGallery];
+          }
+        }
+
+        if (fetchedItems.length > 0) {
+          setGalleryItems(prev => {
+            const uniqueTitles = new Set(fetchedItems.map(item => item.title));
+            const remaining = prev.filter(item => !uniqueTitles.has(item.title) && !item.id.toString().startsWith('g5_'));
+            return [...fetchedItems, ...remaining];
+          });
+        }
+      } catch (err) {
+        console.warn('Could not complete GnuBoard live network posts fetch:', err);
+      }
+    };
+
+    fetchG5Data();
     
     // Listen for custom trigger or storage sync
     window.addEventListener('storage', handleSync);
@@ -157,6 +250,124 @@ export default function NewsSection() {
     return matchesFilter && matchesSearch;
   });
 
+  // Render full page detail view if selectedItem is truthy, instead of a popup modal
+  if (selectedItem) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-2 text-left" id="news-detail-container">
+        {/* Back and breadcrumb */}
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => setSelectedItem(null)}
+            className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-gray-250/60"
+          >
+            ← 목록으로 돌아가기
+          </button>
+          
+          <span className="text-[10px] sm:text-xs font-black tracking-wider uppercase text-blue-600 bg-blue-50 border border-blue-100 px-3 py-1 rounded-full">
+            {selectedItem.category === 'press' ? '공식 보도자료' : '활동 포토 갤러리'}
+          </span>
+        </div>
+
+        <div className="bg-white rounded-3xl border border-gray-150 p-6 sm:p-8 space-y-6 shadow-xs">
+          {/* Cover gradient or banner space */}
+          <div className={`h-56 sm:h-72 bg-gradient-to-tr ${selectedItem.imagePlaceholderColor} rounded-2xl relative p-6 flex items-end overflow-hidden shadow-2xs`}>
+            <div className="absolute inset-0 bg-black/5 mix-blend-overlay"></div>
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold text-white bg-black/30 backdrop-blur-md border border-white/20 select-none">
+              북민회 알림마당 가동 채널
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-3 items-center text-xs">
+              <span className="text-blue-600 font-bold bg-blue-50 px-2.5 py-1 rounded-full">
+                게시 일자: {selectedItem.date}
+              </span>
+              <span className="text-gray-400 font-medium">
+                일반 게시판 조회수: {selectedItem.views}회
+              </span>
+            </div>
+            
+            <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 leading-snug">
+              {selectedItem.title}
+            </h3>
+            
+            <hr className="border-gray-100/80" />
+            
+            <p className="text-xs sm:text-sm text-gray-700 leading-relaxed font-sans whitespace-pre-line pt-2">
+              {selectedItem.description}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5 pt-6 border-t border-gray-100">
+            {selectedItem.tags.map((tag) => (
+              <span key={tag} className="text-[10px] bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg font-bold">
+                #{tag}
+              </span>
+            ))}
+          </div>
+
+          {/* 공유하기 및 빠른 조치 통합 컨트롤 */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/10 border border-amber-200/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div className="text-left space-y-1">
+              <span className="text-[9px] font-black text-amber-600 tracking-wider flex items-center gap-1">
+                <Share2 className="w-3 h-3" />
+                SHARE THIS ARTICLE
+              </span>
+              <h4 className="text-xs font-black text-gray-900">본 소식 외부 공유하기</h4>
+              <p className="text-[10.5px] text-gray-400">탈북민 사회의 자조와 통합을 카카오톡이나 직접 복제 링크로 널리 알려 소통을 촉진하십시오.</p>
+            </div>
+            
+            <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+              {/* 카카오톡 공유 버튼 */}
+              <button
+                type="button"
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}/#/news?id=${selectedItem.id}`;
+                  const text = `[사단법인 북한이탈주민중앙회] 소식: ${selectedItem.title}`;
+                  const kakaoShareUrl = `https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+                  window.open(kakaoShareUrl, '_blank');
+                }}
+                className="px-4 py-2 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-3xs cursor-pointer border border-[#FEE500]/30"
+              >
+                <MessageCircle className="w-3.5 h-3.5 fill-[#191919] text-[#191919]" />
+                <span>카카오톡 공유</span>
+              </button>
+
+              {/* 링크 복사 버튼 */}
+              <button
+                type="button"
+                onClick={() => {
+                  const shareUrl = `${window.location.origin}/#/news?id=${selectedItem.id}`;
+                  navigator.clipboard.writeText(shareUrl).then(() => {
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  });
+                }}
+                className={`px-4 py-2 border text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs ${
+                  copied 
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700 select-none' 
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Link2 className="w-3.5 h-3.5" />
+                <span>{copied ? '복사 완료! 🔗' : '링크 복사'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-5 flex justify-end gap-2 border-t border-gray-100/50">
+            <button
+              onClick={() => setSelectedItem(null)}
+              className="px-5 py-2.5 rounded-xl bg-gray-900 hover:bg-gray-800 text-white font-black text-xs transition-colors cursor-pointer"
+            >
+              목록으로 가기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto px-4" id="news-section-container">
       {/* Search and Filters Layout */}
@@ -170,7 +381,7 @@ export default function NewsSection() {
               filter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
+            <Layers className={`w-3.5 h-3.5 ${filter === 'all' ? 'text-blue-600' : 'text-blue-500'}`} />
             <span className="hidden sm:inline">전체 보기</span>
             <span className="sm:hidden text-[10px]">전체</span>
           </button>
@@ -181,7 +392,7 @@ export default function NewsSection() {
               filter === 'press' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            <Newspaper className="w-3.5 h-3.5" />
+            <Newspaper className={`w-3.5 h-3.5 ${filter === 'press' ? 'text-amber-600' : 'text-amber-500'}`} />
             <span className="hidden sm:inline">공식 보도자료</span>
             <span className="sm:hidden text-[10px]">보도자료</span>
           </button>
@@ -192,7 +403,7 @@ export default function NewsSection() {
               filter === 'gallery' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'
             }`}
           >
-            <Camera className="w-3.5 h-3.5" />
+            <Camera className={`w-3.5 h-3.5 ${filter === 'gallery' ? 'text-emerald-600' : 'text-emerald-500'}`} />
             <span className="hidden sm:inline">활동 갤러리</span>
             <span className="sm:hidden text-[10px]">갤러리</span>
           </button>
@@ -268,58 +479,6 @@ export default function NewsSection() {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Lightbox / Read detail dialog */}
-      {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-gray-100 p-6 space-y-6 relative animate-in fade-in duration-200">
-            {/* Close */}
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 p-2 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-all"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {/* Simulated Banner */}
-            <div className={`h-48 bg-gradient-to-tr ${selectedItem.imagePlaceholderColor} rounded-2xl relative p-5 flex items-end`}>
-              <span className="px-3 py-1 rounded-full text-xs font-bold text-white bg-black/20 backdrop-blur-md border border-white/20 select-none">
-                {selectedItem.category === 'press' ? '보도 기사' : '현장 사진 갤러리'}
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              <span className="text-xs text-blue-600 font-bold bg-blue-50 px-2.5 py-1 rounded-full inline-block">
-                일시: {selectedItem.date}
-              </span>
-              <h3 className="text-lg font-extrabold text-gray-900 leading-snug">
-                {selectedItem.title}
-              </h3>
-              <p className="text-sm text-gray-600 leading-relaxed font-sans whitespace-pre-line">
-                {selectedItem.description}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 pt-4 border-t border-gray-100">
-              {selectedItem.tags.map((tag) => (
-                <span key={tag} className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-xl">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-
-            <div className="pt-2 flex justify-between items-center text-xs text-gray-400">
-              <span>누적 조회수: {selectedItem.views}회</span>
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold text-xs"
-              >
-                닫기
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

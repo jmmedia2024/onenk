@@ -388,7 +388,8 @@ echo json_encode($posts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                 >
                   <option value="notice">공지사항 (notice)</option>
                   <option value="free">자유소통게시판 (free)</option>
-                  <option value="press">보도자료 뉴스 (press)</option>
+                  <option value="news">보도자료 뉴스 (news)</option>
+                  <option value="gallery">활동 갤러리 (gallery)</option>
                   <option value="private">전산회원 기밀실 (private)</option>
                 </select>
               </div>

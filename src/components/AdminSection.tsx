@@ -344,7 +344,7 @@ export default function AdminSection({
   const [searchMemberQuery, setSearchMemberQuery] = useState('');
   const [memberCurrentPage, setMemberCurrentPage] = useState(1);
   const [searchPostQuery, setSearchPostQuery] = useState('');
-  const [selectedG5Board, setSelectedG5Board] = useState<'free' | 'notice' | 'qna' | 'private' | 'press' | 'gallery'>('free');
+  const [selectedG5Board, setSelectedG5Board] = useState<'free' | 'notice' | 'qna' | 'private' | 'news' | 'gallery'>('free');
 
   // Member Form drafts
   const [isAddingMember, setIsAddingMember] = useState(false);
@@ -512,19 +512,19 @@ export default function AdminSection({
       { id: 'free', subject: '자유소통공간', read: 1, write: 1 },
       { id: 'qna', subject: '자주하는질문 및 1:1 민원', read: 1, write: 1 },
       { id: 'private', subject: '정회원 비공개 기밀 전산회원실', read: 3, write: 3 },
-      { id: 'press', subject: '보도자료 뉴스', read: 1, write: 10 },
+      { id: 'news', subject: '보도자료 뉴스', read: 1, write: 10 },
       { id: 'gallery', subject: '활동 갤러리 화랑', read: 1, write: 5 }
     ];
     sql += `INSERT IGNORE INTO \`g5_board\` (\`bo_table\`, \`bo_subject\`, \`bo_read_level\`, \`bo_write_level\`) VALUES\n`;
     sql += boardsList.map(b => `('${b.id}', '${b.subject}', ${b.read}, ${b.write})`).join(',\n') + ';\n\n';
 
     // 3. g5_write_ boards (Dynamically split by post type)
-    const boardTypes = ['free', 'notice', 'qna', 'private', 'press', 'gallery'];
+    const boardTypes = ['free', 'notice', 'qna', 'private', 'news', 'gallery'];
     boardTypes.forEach(bType => {
-      const typePosts = boardPosts.filter(p => p.type === bType);
+      const typePosts = boardPosts.filter(p => p.type === bType || (bType === 'news' && p.type === 'press'));
       
       sql += `-- ---------------------------------------------------------\n`;
-      sql += `-- 테이블 스키마: g5_write_${bType} (${bType === 'free' ? '자유게시판' : bType === 'notice' ? '공지사항' : bType === 'qna' ? '민원기록' : bType === 'private' ? '비공개전산' : bType === 'press' ? '보도자료' : '화랑갤러리'} 저장관 - 보존형 수립)\n`;
+      sql += `-- 테이블 스키마: g5_write_${bType} (${bType === 'free' ? '자유게시판' : bType === 'notice' ? '공지사항' : bType === 'qna' ? '민원기록' : bType === 'private' ? '비공개전산' : bType === 'news' ? '보도자료' : '화랑갤러리'} 저장관 - 보존형 수립)\n`;
       sql += `-- ---------------------------------------------------------\n`;
       sql += `CREATE TABLE IF NOT EXISTS \`g5_write_${bType}\` (\n`;
       sql += `  \`wr_id\` int(11) NOT NULL AUTO_INCREMENT,\n`;
@@ -676,6 +676,157 @@ export default function AdminSection({
     }
   };
 
+  const [isSyncingGnuMembers, setIsSyncingGnuMembers] = useState(false);
+  const [isSyncingGnuPosts, setIsSyncingGnuPosts] = useState(false);
+
+  const fetchGnuMembersFromApi = async () => {
+    if (!g5ApiUrl) {
+      alert("그누보드 API 브릿지 URL이 설정되지 않았습니다.\n'G5 스키마/API 연동 설정' 이나 '그누보드 API 연동' 메뉴에서 API 주소 경로를 확인하십시오.");
+      return;
+    }
+    setIsSyncingGnuMembers(true);
+    setConsoleLogs(prev => [...prev, `[GnuBoard API] 회원 조회 API 릴레이 요청 중: ${g5ApiUrl}`]);
+    try {
+      const response = await fetch(g5ApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${g5ApiKey}`
+        },
+        body: JSON.stringify({
+          action: 'get_members',
+          db_host: g5DbHost,
+          db_name: g5DbName,
+          db_user: g5DbUser,
+          db_password: g5DbPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.status === 'success' && Array.isArray(data.data)) {
+        const mapped: GnuMember[] = data.data.map((m: any) => ({
+          mb_id: m.mb_id,
+          mb_name: m.mb_name || m.mb_id,
+          mb_nick: m.mb_nick || m.mb_id,
+          mb_level: parseInt(m.mb_level) || 2,
+          mb_email: m.mb_email || '',
+          mb_tel: m.mb_tel || '',
+          mb_datetime: m.mb_datetime ? m.mb_datetime.substring(0, 10) : new Date().toISOString().split('T')[0],
+          mb_open: true
+        }));
+
+        setGnuMembers(mapped);
+        localStorage.setItem('bukmin_g5_members_v1', JSON.stringify(mapped));
+        setConsoleLogs(prev => [...prev, `[GnuBoard API SUCCESS] ${mapped.length}명의 회원을 원격지에서 정상 로드하여 React 캐시를 대치했습니다.`]);
+        alert(`🎉 그누보드 회원 동기화 성공!\n실제 GnuBoard 데이터베이스에서 총 ${mapped.length}명의 실제 가입 회원 목록을 실시간으로 가져왔습니다.`);
+      } else {
+        throw new Error(data.message || 'API 응답 상태가 올바르지 않습니다.');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setConsoleLogs(prev => [...prev, `[API Pull Error] GnuBoard 회원 동기화 수신 기각: ${err.message}`]);
+      alert(`❌ 그누보드 회원 데이터 수신 실패\n사유: ${err.message || 'CORS 통신 허용 누락 또는 도메인 오프라인'}\n\n[G5 스키마/API 연동 설정] 탭에 있는 g5_sync_bridge.php 원본 소스코드를 그누보드 루트 폴더에 올바르게 배치하고 API Bearer 보안 토큰 키가 완전히 매칭되는지 확인하십시오.`);
+    } finally {
+      setIsSyncingGnuMembers(false);
+    }
+  };
+
+  const fetchGnuPostsFromApi = async (boTable: string) => {
+    if (!g5ApiUrl) {
+      alert("그누보드 API 브릿지 URL이 설정되지 않았습니다.\n'G5 스키마/API 연동 설정' 에서 주소를 설정해 주십시오.");
+      return;
+    }
+    setIsSyncingGnuPosts(true);
+    setConsoleLogs(prev => [...prev, `[GnuBoard API] g5_write_${boTable} 게시글 수신 요청 중...`]);
+    try {
+      const response = await fetch(g5ApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${g5ApiKey}`
+        },
+        body: JSON.stringify({
+          action: 'get_latest_posts',
+          bo_table: boTable,
+          limit: 30,
+          db_host: g5DbHost,
+          db_name: g5DbName,
+          db_user: g5DbUser,
+          db_password: g5DbPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP status ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.status === 'success' && Array.isArray(data.data)) {
+        const fetchedPosts = data.data.map((p: any) => ({
+          id: `g5_${boTable}_${p.wr_id}`,
+          type: boTable,
+          title: p.wr_subject,
+          content: p.wr_content,
+          author: p.wr_name || '그누보드회원',
+          date: p.wr_datetime ? p.wr_datetime.substring(0, 10) : new Date().toISOString().split('T')[0],
+          views: parseInt(p.wr_hit) || 0,
+          likes: 0,
+          comments: []
+        }));
+
+        const otherPosts = boardPosts.filter(p => p.type !== boTable);
+        const merged = [...fetchedPosts, ...otherPosts];
+        
+        syncPostsToStorage(merged);
+        setConsoleLogs(prev => [...prev, `[GnuBoard API SUCCESS] g5_write_${boTable} 테이블에서 ${fetchedPosts.length}개의 게시글 동기화 완료`]);
+        alert(`🎉 [${boTable === 'free' ? '자유게시판' : boTable === 'notice' ? '공지사항' : boTable === 'news' ? '보도자료' : boTable === 'qna' ? '민원기록' : boTable === 'private' ? '비공개전산' : '갤러리'}] 실시간 동기화 완료!\n실제 GnuBoard MySQL 원장에서 ${fetchedPosts.length}개의 최신 글을 성실히 로드하여 백사이드에 전사하였습니다.`);
+      } else {
+        throw new Error(data.message || 'API 상태 응답 불합격');
+      }
+    } catch (err: any) {
+      console.error(err);
+      setConsoleLogs(prev => [...prev, `[API Pull Error] GnuBoard 게시글 동기화 수신 기각: ${err.message}`]);
+      alert(`❌ [${boTable}] 게시글 동기화 실패\n사유: ${err.message || 'CORS 통신 거부 또는 MySQL 테이블 탐지 실패'}`);
+    } finally {
+      setIsSyncingGnuPosts(false);
+    }
+  };
+
+  const promoteGnuMemberOnApi = async (mb_id: string, targetLevel: number) => {
+    if (!g5ApiUrl) return;
+    setConsoleLogs(prev => [...prev, `[GnuBoard API] 회원 등급 업데이트(UPGRADE) 수신 통보 중: mb_id = ${mb_id}, level = ${targetLevel}`]);
+    try {
+      const response = await fetch(g5ApiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${g5ApiKey}`
+        },
+        body: JSON.stringify({
+          action: 'promote_member',
+          mb_id: mb_id,
+          target_level: targetLevel,
+          db_host: g5DbHost,
+          db_name: g5DbName,
+          db_user: g5DbUser,
+          db_password: g5DbPassword
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.status === 'success') {
+          setConsoleLogs(prev => [...prev, `[GnuBoard API Level Up] 원격지 그누보드 회원 [${mb_id}]의 등급을 레벨 ${targetLevel}로 실제 승급 동기화 완료!`]);
+        }
+      }
+    } catch (err: any) {
+      console.warn("Could not promote member in remote GnuBoard directly:", err);
+    }
+  };
+
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'success' | 'failed'>('idle');
   const [syncLogs, setSyncLogs] = useState<string[]>([]);
   const [showSyncModal, setShowSyncModal] = useState(false);
@@ -691,6 +842,7 @@ export default function AdminSection({
     'Ready for administrative instructions.'
   ]);
   const [consoleQuery, setConsoleQuery] = useState('');
+  const [copiedHtaccess, setCopiedHtaccess] = useState(false);
 
   // Persist edits
   useEffect(() => {
@@ -756,8 +908,8 @@ export default function AdminSection({
           comments: []
         },
         {
-          id: 'press-1',
-          type: 'press',
+          id: 'news-1',
+          type: 'news',
           title: '[보도] 3만 4천 탈북민 정착 지원 강화를 위한 통일부 정책 간담회 개최',
           content: '본사 5층 대강의실에서 통일부 관계 실무진들과 탈북 연대 회장단이 배석하여 생활지원금 인상 및 자격 교육 기회 확충에 대해 열띈 대안을 건의 및 교환하였습니다.\n\n통일부 정착 지원 담당 과장 및 연구진 10여명이 참석하여 구체적인 소득 보장 대책을 논의하고 향후 지원 법률을 정교하게 고도화하기로 합의하였습니다.',
           author: '정책대변인',
@@ -769,8 +921,8 @@ export default function AdminSection({
           comments: []
         },
         {
-          id: 'press-2',
-          type: 'press',
+          id: 'news-2',
+          type: 'news',
           title: '[기부뉴스] 북한이탈주민중앙회 투명성 인증 획득 등급 세부 개방',
           content: '회비 및 정기/일시 기탁 후원금에 대한 회계 법인 안진의 2개년 기예 결산 전결 감사 결과를 외부 전면 오픈 승인하였습니다. 투명 회계를 성실히 이행하겠습니다.\n\n기부 투명성 평가 기관으로부터 최고 등급(AAA)의 재정 안전 신뢰 가치를 입증 받았으며, 향후 전산 원장을 실시간 블록체인 연계로 투명하게 공개 진행할 예정입니다.',
           author: '감사총무처',
@@ -782,8 +934,8 @@ export default function AdminSection({
           comments: []
         },
         {
-          id: 'press-3',
-          type: 'press',
+          id: 'news-3',
+          type: 'news',
           title: '[보도] 사단법인 북한이탈주민중앙회-대한법률구조공단 실무 연계 MOU 체결',
           content: '법의 경계를 이해하기 어려워 불이익을 겪거나 보호 조치가 필요한 탈북민들에게 직접 전문 법률 변론과 소송 보전을 무상 지원 통로를 확보하였습니다.\n\n대한법률구조공단 이사장 및 재단 변호인 단체 20여명이 배석하여 공판 조력 및 소액 채권 채무 회복 지원을 공동 적극 추진하기로 서명 날인하였습니다.',
           author: '대외연대국',
@@ -2764,6 +2916,20 @@ export default function AdminSection({
                           }}
                         />
                       </div>
+
+                      <button
+                        type="button"
+                        onClick={fetchGnuMembersFromApi}
+                        disabled={isSyncingGnuMembers}
+                        className={`px-4 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 border shrink-0 ${
+                          isSyncingGnuMembers
+                            ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                            : 'bg-emerald-50 hover:bg-emerald-100/70 border-emerald-200 text-emerald-700 hover:border-emerald-300'
+                        }`}
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGnuMembers ? 'animate-spin' : ''}`} />
+                        {isSyncingGnuMembers ? '데이터 연동 확인 중...' : '⚡ 그누보드 회원 실시간 동기화'}
+                      </button>
                     </div>
 
                     {/* G5 member table list */}
@@ -3193,15 +3359,15 @@ export default function AdminSection({
                         </button>
                         <button
                           onClick={() => {
-                            setSelectedG5Board('press');
+                            setSelectedG5Board('news');
                             setEditingPost(null);
                             setIsAddingPost(false);
                           }}
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                            selectedG5Board === 'press' ? 'bg-white text-blue-600 shadow-sm border border-gray-200/50' : 'text-gray-550'
+                            selectedG5Board === 'news' ? 'bg-white text-blue-600 shadow-sm border border-gray-200/50' : 'text-gray-550'
                           }`}
                         >
-                          보도자료 (g5_write_press)
+                          보도자료 (g5_write_news)
                         </button>
                         <button
                           onClick={() => {
@@ -3217,16 +3383,31 @@ export default function AdminSection({
                         </button>
                       </div>
 
-                      {/* Post Search input */}
-                      <div className="relative w-full sm:max-w-xs">
-                        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <input
-                          type="text"
-                          placeholder="소소 게시글 본문, 필자, 제표 검색..."
-                          className="w-full bg-white border border-gray-200 pl-10 pr-4 py-2 rounded-xl text-xs focus:outline-none focus:border-blue-500 text-left"
-                          value={searchPostQuery}
-                          onChange={(e) => setSearchPostQuery(e.target.value)}
-                        />
+                      {/* Post Search input & Real-time Live Sync button */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:w-64">
+                          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            placeholder="소소 게시글 본문, 필자, 제표 검색..."
+                            className="w-full bg-white border border-gray-200 pl-10 pr-4 py-2.5 rounded-xl text-xs focus:outline-none focus:border-blue-500 text-left"
+                            value={searchPostQuery}
+                            onChange={(e) => setSearchPostQuery(e.target.value)}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fetchGnuPostsFromApi(selectedG5Board)}
+                          disabled={isSyncingGnuPosts}
+                          className={`px-3 py-2 rounded-xl text-[11px] font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 border shrink-0 ${
+                            isSyncingGnuPosts
+                              ? 'bg-gray-100 text-gray-400 border-gray-200 / cursor-not-allowed'
+                              : 'bg-indigo-50 hover:bg-indigo-100/75 border-indigo-200 text-indigo-700 hover:border-indigo-300'
+                          }`}
+                        >
+                          <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGnuPosts ? 'animate-spin' : ''}`} />
+                          {isSyncingGnuPosts ? '조회 수신 중..' : '⚡ 이 게시판 G5 실시간 동기화'}
+                        </button>
                       </div>
                     </div>
 
@@ -3665,12 +3846,16 @@ echo json_encode(array(
  */
 
 // 1. CORS 및 응답 헤더 설정
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
+// [팁] PHP header() 구문 대신 Apache 웹서버의 .htaccess 설정을 사용하는 것이 훨씬 안정적이며 성능상 우수합니다.
+// 만약 .htaccess로 CORS 헤더를 설정하셨다면 아래 header() 구문들은 주석 처리하셔도 무방합니다.
+if (!headers_sent()) {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+    header("Content-Type: application/json; charset=UTF-8");
+}
 
-// OPTIONS 사전 요청(Pre-flight) 처리
+// OPTIONS 사전 요청(Pre-flight) 처리 (.htaccess에서 200 응답을 가로채지 않았을 때를 위한 php 폴백)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();
@@ -3947,6 +4132,86 @@ switch ($action) {
                           <p className="font-medium text-[9.5px] text-indigo-850 mt-0.5 leading-relaxed">
                             이 브릿지 파일은 보안인증 토큰(<span className="font-mono font-bold text-red-600 bg-slate-100 px-1 rounded">bukmin_g5_secure_token_key_2026</span>)을 통한 Bearer Auth와, 수혜인 실명 검인, 자동 회원 등급 조정을 완벽히 상호 실행시킵니다.
                           </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Apache .htaccess High Performance CORS option (User's choice & highly recommended) */}
+                    <div className="glass-card p-6 rounded-3xl border border-amber-200 bg-amber-50/5 text-left space-y-4">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                          <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest flex items-center gap-1.5 font-mono">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                            Apache Server Side CORS Handling (.htaccess Option)
+                          </span>
+                          <h4 className="text-base font-black text-gray-900 font-sans">⚡ 아파치 .htaccess를 통한 초고속 CORS 위임 설정 가이드 (실무 권장)</h4>
+                          <p className="text-[11px] text-gray-650 leading-relaxed max-w-4xl">
+                            CORS 크로스 도메인 및 브라우저의 OPTIONS (Preflight) 사전 검사 요청을 PHP 스크립트가 처리하지 않고, <strong className="text-amber-800">Apache 웹서버(mod_headers 및 mod_rewrite) 수준에서 즉시 가로채 처리하도록 위임</strong>하는 방식입니다. PHP 엔진을 구동하지 않아 응답속도가 최고치로 끌어올려지며, 브라우저 연동 과정의 오작동 및 <code className="bg-slate-100 font-mono px-1 rounded text-red-600">headers_sent</code> 오류를 100% 원런 차단합니다.
+                          </p>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const htaccessCode = `# ----------------------------------------------------------------------
+# [북민회 ERP 연동 전용] CORS 고성능 글로벌 허용 설정 (.htaccess - Apache 전용)
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # 1. 모든 교차 출처(또는 특정 가상 도메인)에서의 API 접속 허용
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    
+    # 2. 브라우저가 전송하는 OPTIONS (Preflight) 사전 요청 즉시 자동 200 반환 (PHP 인터프리터 로드 수고 방지)
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</IfModule>`;
+                            navigator.clipboard.writeText(htaccessCode).then(() => {
+                              setCopiedHtaccess(true);
+                              setTimeout(() => setCopiedHtaccess(false), 2000);
+                            });
+                          }}
+                          className={`px-4 py-2 text-[11px] font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-3xs hover:scale-[1.01] ${
+                            copiedHtaccess
+                              ? 'bg-emerald-600 text-white border-emerald-600'
+                              : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300'
+                          }`}
+                        >
+                          <Code className="w-3.5 h-3.5" />
+                          <span>{copiedHtaccess ? '코드 복사 완료! ✓' : '.htaccess CORS 명세 복사'}</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div className="bg-slate-900 border border-slate-800 text-slate-300 p-4 rounded-2xl font-mono text-[9px] leading-relaxed text-left relative overflow-x-auto">
+                          <div className="absolute top-2 right-2 text-[8px] bg-slate-800 px-1.5 py-0.5 rounded font-sans text-gray-400">Apache File / .htaccess</div>
+                          <pre>{`# ----------------------------------------------------------------------
+# CORS 고성능 글로벌 허용 설정 (.htaccess - Apache 전용 실무 권장)
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+    # 1. 모든 교차 출처(또는 특정 가상 도메인)에서의 API 접속 허용
+    Header set Access-Control-Allow-Origin "*"
+    Header set Access-Control-Allow-Methods "POST, GET, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    
+    # 2. 브라우저가 전송하는 OPTIONS (Preflight) 사전 요청 즉시 자동 200 반환 (PHP 로드 불필요)
+    RewriteEngine On
+    RewriteCond %{REQUEST_METHOD} OPTIONS
+    RewriteRule ^(.*)$ $1 [R=200,L]
+</IfModule>`}</pre>
+                        </div>
+
+                        <div className="p-4 bg-white/55 border border-amber-150 rounded-2xl text-[11px] leading-relaxed text-amber-950 font-medium space-y-1.5">
+                          <div className="font-bold text-amber-900">💡 왜 이 방법을 권장하나요?</div>
+                          <ul className="list-disc list-inside space-y-1 text-slate-700 text-[10.5px]">
+                            <li><strong>서버 성능 절약:</strong> 브라우저가 보내는 사전동작(OPTIONS) 질문을 Apache 웹서버단에서 2초 안에 해결하여 PHP 실행 리소스를 소모하지 않습니다.</li>
+                            <li><strong>헤더 충돌 최소화:</strong> PHP 내에서 이중으로 헤더가 중첩 정의되어 생기는 <code className="bg-slate-100 font-mono px-0.5 rounded text-red-650">Duplicate Access-Control-Allow-Origin</code> 결격을 차단합니다.</li>
+                            <li><strong>보안성 기여:</strong> PHP 소스코드의 시작과 독립된 도메인 수준 규칙 규정으로 안정성이 최적화됩니다.</li>
+                          </ul>
+                          <div className="text-[10px] text-gray-500 font-semibold pt-1">
+                            * 사용 방법: 그누보드 서버의 루트 디렉토리에 있는 <code className="bg-slate-150 rounded px-1 text-gray-800 font-mono">.htaccess</code> 파일 끝자락에 위 블록을 그대로 붙여넣어 저장하십시오.
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -4498,7 +4763,7 @@ switch ($action) {
                           </div>
                           <ul className="text-[10.5px] text-gray-600 list-disc list-inside space-y-1 leading-relaxed pl-1 font-semibold">
                             <li><strong>PHP 브릿지 경로:</strong> 파일이 그누보드 설치 서버에 업로드되었으며 주소가 정확합니까?</li>
-                            <li><strong>CORS Access 헤더:</strong> 파일 상단에 <code>header("Access-Control-Allow-Origin: *");</code> 가 포함되었습니까?</li>
+                            <li><strong>CORS Access 헤더:</strong> PHP 파일 상단에 <code>header("Access-Control-Allow-Origin: *");</code> 가 수립되었거나, 그누보드 서버의 <code>.htaccess</code> 파일에 Apache CORS 규칙이 활성화되어 있는지 확인하십시오.</li>
                             <li><strong>보안 인증키 대조:</strong> React ERP Secret Key와 PHP 브릿지의 <code>$API_SECRET_TOKEN</code> 값이 정확히 같은지 점검하십시오.</li>
                             <li><strong>DB 세션 점검:</strong> MySQL DB의 호스트명, 암호 오탈자를 다시 한번 확인하십시오.</li>
                           </ul>

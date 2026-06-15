@@ -9,12 +9,16 @@
  */
 
 // 1. CORS 및 응답 헤더 설정
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
-header("Content-Type: application/json; charset=UTF-8");
+// [팁] PHP header() 구문 대신 Apache 웹서버의 .htaccess 설정을 사용하는 것이 훨씬 안정적이며 성능상 우수합니다.
+// 만약 .htaccess로 CORS 헤더를 설정하셨다면 아래 header() 구문들은 주석 처리하셔도 무방합니다.
+if (!headers_sent()) {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+    header("Content-Type: application/json; charset=UTF-8");
+}
 
-// OPTIONS 사전 요청(Pre-flight) 처리
+// OPTIONS 사전 요청(Pre-flight) 처리 (.htaccess에서 200 응답을 가로채지 않았을 때를 위한 php 폴백)
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit();

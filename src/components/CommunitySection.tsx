@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles, Share2, Link2, MessageCircle } from 'lucide-react';
 import { Post, Comment } from '../types';
 
 interface CommunitySectionProps {
@@ -15,6 +15,7 @@ export default function CommunitySection({
   const [searchQuery, setSearchQuery] = useState('');
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [copied, setCopied] = useState(false);
   
   // New post draft
   const [isCreating, setIsCreating] = useState(false);
@@ -466,6 +467,55 @@ export default function CommunitySection({
                 >
                   <ThumbsUp className="w-4 h-4" /> 유익한 정보로 추천 ({selectedPost.likes})
                 </button>
+              </div>
+
+              {/* 공유하기 및 빠른 조치 통합 컨트롤 */}
+              <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/10 border border-amber-200/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 my-2">
+                <div className="text-left space-y-1">
+                  <span className="text-[9px] font-black text-amber-600 tracking-wider flex items-center gap-1">
+                    <Share2 className="w-3 h-3" />
+                    SHARE THIS DISCUSSION
+                  </span>
+                  <h4 className="text-xs font-black text-gray-900">게시글 대외 공유하기</h4>
+                  <p className="text-[10.5px] text-gray-400">민주 소통과 통일 연대의 가치 있는 토론을 카카오톡이나 링크 복사로 지인과 공유하십시오.</p>
+                </div>
+                
+                <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
+                  {/* 카카오톡 공유 버튼 */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const shareUrl = `${window.location.origin}/#/community?board=${selectedPost.type}&id=${selectedPost.id}`;
+                      const text = `[북한이탈주민중앙회 소통마당] 의견: ${selectedPost.title}`;
+                      const kakaoShareUrl = `https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(text)}`;
+                      window.open(kakaoShareUrl, '_blank');
+                    }}
+                    className="px-4 py-2 bg-[#FEE500] hover:bg-[#FEE500]/90 text-[#191919] text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-3xs cursor-pointer border border-[#FEE500]/30"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 fill-[#191919] text-[#191919]" />
+                    <span>카카오톡 공유</span>
+                  </button>
+
+                  {/* 링크 복사 버튼 */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const shareUrl = `${window.location.origin}/#/community?board=${selectedPost.type}&id=${selectedPost.id}`;
+                      navigator.clipboard.writeText(shareUrl).then(() => {
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      });
+                    }}
+                    className={`px-4 py-2 border text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-3xs ${
+                      copied 
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 select-none' 
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Link2 className="w-3.5 h-3.5" />
+                    <span>{copied ? '복사 완료! 🔗' : '링크 복사'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Comments list */}
