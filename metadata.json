@@ -1,0 +1,6 @@
+{
+  "name": "북한이탈주민중앙회",
+  "description": "사단법인 북한이탈주민중앙회(북민회) 공식 홈페이지 및 관리 시스템 포털",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
