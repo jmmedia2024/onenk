@@ -152,7 +152,7 @@ export default function AdminSection({
     const saved = localStorage.getItem('bukmin_g5_members_v1');
     if (saved) return JSON.parse(saved);
     return [
-      { mb_id: 'admin', mb_name: '최고관리자', mb_nick: '북민회대표', mb_level: 10, mb_email: 'admin@bukmin.org', mb_tel: '02-720-3400', mb_datetime: '2026-01-01', mb_open: true },
+      { mb_id: 'admin', mb_name: '최고관리자', mb_nick: '북민회대표', mb_level: 10, mb_email: 'admin@bukmin.org', mb_tel: '02-6498-3133', mb_datetime: '2026-01-01', mb_open: true },
       { mb_id: 'nk_hero', mb_name: '박상혁', mb_nick: '자유수호가', mb_level: 3, mb_email: 'sanghyuk@gmail.com', mb_tel: '010-8937-1234', mb_datetime: '2026-06-11', mb_open: true },
       { mb_id: 'happy_uni', mb_name: '이정현', mb_nick: '통일나래', mb_level: 2, mb_email: 'junghyun@naver.com', mb_tel: '010-6575-5678', mb_datetime: '2026-06-12', mb_open: true },
       { mb_id: 'k_sarang', mb_name: '한은혜', mb_nick: '새삶인', mb_level: 2, mb_email: 'eunhye@daum.net', mb_tel: '010-4461-9012', mb_datetime: '2026-06-13', mb_open: true },

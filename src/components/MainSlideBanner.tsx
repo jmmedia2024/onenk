@@ -10,11 +10,13 @@ interface Slide {
   gradient: string;
   icon: React.ReactNode;
   bgDecorative: string;
+  image: string;
 }
 
 export default function MainSlideBanner() {
   const [current, setCurrent] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({});
 
   const slides: Slide[] = [
     {
@@ -23,8 +25,9 @@ export default function MainSlideBanner() {
       title: "자유를 넘어 정착으로,\n따뜻한 희망의 동행",
       desc: "3만 4천 북한이탈주민의 든든한 정착 울타리가 되어, 당당한 대한민국 시민으로서 상호 협력과 안정적인 자립 성장을 견인합니다.",
       gradient: "from-blue-600 to-indigo-500",
-      icon: <Globe className="w-8 h-8 text-white" />,
-      bgDecorative: "bg-blue-50/40"
+      icon: <Globe className="w-5 h-5 text-white" />,
+      bgDecorative: "bg-blue-50/40",
+      image: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=480&q=80"
     },
     {
       id: 2,
@@ -32,8 +35,9 @@ export default function MainSlideBanner() {
       title: "수혜자의 입장을 넘어\n대한민국 국가 '기여자'로",
       desc: "더 이상 일방적인 혜택의 대상에 머무르지 않고, 적극적인 정기 자원봉사 및 사회공헌 활동을 선도하며 대한민국 발전의 주역이 됩니다.",
       gradient: "from-teal-500 to-emerald-500",
-      icon: <Heart className="w-8 h-8 text-white" />,
-      bgDecorative: "bg-teal-50/40"
+      icon: <Heart className="w-5 h-5 text-white" />,
+      bgDecorative: "bg-teal-50/40",
+      image: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=480&q=80"
     },
     {
       id: 3,
@@ -41,8 +45,9 @@ export default function MainSlideBanner() {
       title: "100% 완벽한 전산 회계 공시와\n외부 정기 세무감사 보존",
       desc: "단 1원의 기부금도 투명하게 집행되도록 최신 전산 관리 시스템을 가동하며, 정기적인 외부 감사 영수 파일을 전원 상시 열람 가능하게 보존합니다.",
       gradient: "from-violet-600 to-fuchsia-500",
-      icon: <Shield className="w-8 h-8 text-white" />,
-      bgDecorative: "bg-violet-50/40"
+      icon: <Shield className="w-5 h-5 text-white" />,
+      bgDecorative: "bg-violet-50/40",
+      image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=480&q=80"
     },
     {
       id: 4,
@@ -50,8 +55,9 @@ export default function MainSlideBanner() {
       title: "전국 산하 130여 개\n탈북 단체의 유기적 구심점",
       desc: "각 도민회, 청년회, 전문 지원 단체 등 전국 각지에 산재하는 130개 이상의 상호교류 연대를 하나로 일관성 있게 결집하여 통합 리더십을 세웁니다.",
       gradient: "from-amber-500 to-orange-500",
-      icon: <Users className="w-8 h-8 text-white" />,
-      bgDecorative: "bg-amber-50/40"
+      icon: <Users className="w-5 h-5 text-white" />,
+      bgDecorative: "bg-amber-50/40",
+      image: "https://images.unsplash.com/photo-1511556532299-8f662fc26c06?auto=format&fit=crop&w=480&q=80"
     },
     {
       id: 5,
@@ -59,10 +65,15 @@ export default function MainSlideBanner() {
       title: "무상 법률상담 및\n불공정 피해 상설 해결 지원",
       desc: "지방자치단체 및 민간 법본부와 공식 협약을 통해, 정착 과정 중 겪는 임금 체불, 사기 등 각종 법률 피해를 위해 소송 지원과 전문 자문을 지원합니다.",
       gradient: "from-rose-500 to-pink-500",
-      icon: <Award className="w-8 h-8 text-white" />,
-      bgDecorative: "bg-rose-50/40"
+      icon: <Award className="w-5 h-5 text-white" />,
+      bgDecorative: "bg-rose-50/40",
+      image: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?auto=format&fit=crop&w=480&q=80"
     }
   ];
+
+  const handleImageLoad = (id: number) => {
+    setLoadedImages(prev => ({ ...prev, [id]: true }));
+  };
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -137,16 +148,45 @@ export default function MainSlideBanner() {
           <AnimatePresence mode="wait">
             <motion.div
               key={current}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.4, ease: "easeInOut" }}
+              initial={{ opacity: 0, scale: 0.99 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.5, ease: [0.25, 1, 0.5, 1] }}
               className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center"
             >
-              {/* Left visual stamp / Icon badge */}
+              {/* Left visual stamp / Glassmorphic Photo Frame with Shimmer Skeleton */}
               <div className="col-span-1 md:col-span-3 flex justify-center">
-                <div className={`w-16 h-16 md:w-24 md:h-24 rounded-2xl md:rounded-3xl bg-gradient-to-tr ${slides[current].gradient} flex items-center justify-center shadow-lg shadow-blue-500/10 shrink-0 transform hover:scale-105 transition-transform duration-300`}>
-                  {slides[current].icon}
+                <div 
+                  className="w-24 h-24 md:w-32 md:h-32 relative rounded-3xl overflow-hidden border border-slate-200/80 bg-slate-50 shadow-md shrink-0 transform hover:scale-103 transition-transform duration-300 select-none"
+                  id={`slide-media-frame-${slides[current].id}`}
+                >
+                  <img
+                    src={slides[current].image}
+                    alt={slides[current].tag}
+                    referrerPolicy="no-referrer"
+                    onLoad={() => handleImageLoad(slides[current].id)}
+                    className={`w-full h-full object-cover transition-all duration-700 ease-out select-none ${
+                      loadedImages[slides[current].id] 
+                        ? 'opacity-100 scale-100 blur-0' 
+                        : 'opacity-0 scale-95 blur-xs'
+                    }`}
+                  />
+
+                  {/* High fidelity shimmer skeleton loader */}
+                  {!loadedImages[slides[current].id] && (
+                    <div className="absolute inset-0 bg-slate-100 flex items-center justify-center" id="skeleton-container">
+                      <div className="absolute inset-0 bg-gradient-to-r from-slate-150 via-slate-50 to-slate-150 animate-pulse opacity-70" />
+                      <div className="w-5 h-5 border-2 border-blue-500/30 border-t-blue-600 rounded-full animate-spin relative z-10" />
+                    </div>
+                  )}
+
+                  {/* Corner Accent Badge indicating the slide's role / identity */}
+                  <div 
+                    className={`absolute bottom-2 right-2 w-8 h-8 rounded-xl bg-gradient-to-tr ${slides[current].gradient} flex items-center justify-center shadow-md border border-white/50 backdrop-blur-xs select-none`}
+                    id="carousel-mini-badge"
+                  >
+                    {slides[current].icon}
+                  </div>
                 </div>
               </div>
 

@@ -131,13 +131,13 @@ export default function AboutSection({ greeting, purpose, orgCustom, location }:
   };
 
   const defaultLocation: AboutLocation = {
-    address: "서울특별시 종로구 세종대로 209 (중앙회 빌딩 503호)",
-    phone: "02-720-3400 (내선 1번: 사무국, 2번: 후원보호과)",
+    address: "서울시 강서구 화곡동 377-14 동양빌딩 301호",
+    phone: "02-6498-3133 (내선 1번: 사무국, 2번: 후원보호과)",
     email: "contact@bukmin.or.kr (회신 24시간 이내)",
-    subwayLine3: "경복궁역 6번 출구에서 세종문화회관 방면 가로수길 도보 5분",
-    subwayLine5: "광화문역 2번 출구 앞 주안대로 방면 횡단보도로 2분 이동",
-    lat: "37.5759° N",
-    lng: "126.9768° E"
+    subwayLine3: "5호선 화곡역 1번 출구에서 가온사거리 방면 도보 8분",
+    subwayLine5: "5호선 우장산역 2번 출구에서 수명산 방면 도보 5분",
+    lat: "37.5484° N",
+    lng: "126.8362° E"
   };
 
   const currentGreeting = greeting || defaultGreeting;

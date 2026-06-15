@@ -168,6 +168,7 @@ export default function NewsSection() {
         });
 
         // 2. Fetch gallery board posts (활동 갤러리)
+        const customGalleryTable = localStorage.getItem('bukmin_g5_gallery_board') || 'gallery';
         const galleryResponse = await fetch(g5ApiUrl, {
           method: 'POST',
           headers: {
@@ -176,7 +177,7 @@ export default function NewsSection() {
           },
           body: JSON.stringify({
             action: 'get_latest_posts',
-            bo_table: 'gallery',
+            bo_table: customGalleryTable,
             limit: 15,
             db_host: g5DbHost,
             db_name: g5DbName

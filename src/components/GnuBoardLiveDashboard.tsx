@@ -97,7 +97,7 @@ export default function GnuBoardLiveDashboard({
 
   // Default Simulation Baseline Seed data (Fallback if remote offline or Local Sandbox Selected)
   const simulatedMembers: G5Member[] = [
-    { mb_id: 'admin', mb_name: '최고관리자', mb_nick: '북민회대표', mb_level: 10, mb_email: 'admin@bukmin.org', mb_tel: '02-720-3400', mb_datetime: '2026-01-01 10:00:00' },
+    { mb_id: 'admin', mb_name: '최고관리자', mb_nick: '북민회대표', mb_level: 10, mb_email: 'admin@bukmin.org', mb_tel: '02-6498-3133', mb_datetime: '2026-01-01 10:00:00' },
     { mb_id: 'nk_hope99', mb_name: '정명선', mb_nick: '통일희망원', mb_level: 1, mb_email: 'hope99@naver.com', mb_tel: '010-3341-9011', mb_datetime: '2026-06-13 15:42:01' },
     { mb_id: 'f_north7', mb_name: '김주성', mb_nick: '백두한라', mb_level: 1, mb_email: 'chuseong7@gmail.com', mb_tel: '010-8841-4562', mb_datetime: '2026-06-12 11:20:30' },
     { mb_id: 'nk_hero', mb_name: '박상혁', mb_nick: '자유수호가', mb_level: 3, mb_email: 'sanghyuk@gmail.com', mb_tel: '010-8937-1234', mb_datetime: '2026-06-11 09:14:15' },

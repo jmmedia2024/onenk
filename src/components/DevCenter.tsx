@@ -48,7 +48,7 @@ export default function DevCenter() {
             status: 'success',
             count: 4,
             data: [
-              { mb_no: 1, mb_id: 'admin', mb_name: '최고관리자', mb_nick: '북민회대표', mb_level: 10, mb_email: 'admin@bukmin.org', mb_tel: '02-720-3400', mb_datetime: '2026-06-15 12:00:00' },
+              { mb_no: 1, mb_id: 'admin', mb_name: '최고관리자', mb_nick: '북민회대표', mb_level: 10, mb_email: 'admin@bukmin.org', mb_tel: '02-6498-3133', mb_datetime: '2026-06-15 12:00:00' },
               { mb_no: 2, mb_id: 'nk_hero', mb_name: '박상혁', mb_nick: '자유수호가', mb_level: 3, mb_email: 'sanghyuk@gmail.com', mb_tel: '010-8937-1234', mb_datetime: '2026-06-11 09:14:15' },
               { mb_no: 3, mb_id: 'happy_uni', mb_name: '이정현', mb_nick: '통일나래', mb_level: 2, mb_email: 'junghyun@naver.com', mb_tel: '010-6575-5678', mb_datetime: '2026-06-12 18:05:11' },
               { mb_no: 4, mb_id: 'k_sarang', mb_name: '한은혜', mb_nick: '새삶인', mb_level: 2, mb_email: 'eunhye@daum.net', mb_tel: '010-4461-9012', mb_datetime: '2026-06-12 14:33:02' }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles, Share2, Link2, MessageCircle } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles, Share2, Link2, MessageCircle, X, AlertCircle } from 'lucide-react';
 import { Post, Comment } from '../types';
 
 interface CommunitySectionProps {
@@ -16,6 +16,30 @@ export default function CommunitySection({
   const [posts, setPosts] = useState<Post[]>([]);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // GnuBoard API Write Modal States
+  const [isG5ModalOpen, setIsG5ModalOpen] = useState(false);
+  const [g5TargetBoard, setG5TargetBoard] = useState<'free' | 'qna' | 'private' | 'notice'>('free');
+  const [g5Title, setG5Title] = useState('');
+  const [g5Content, setG5Content] = useState('');
+  const [isG5Submitting, setIsG5Submitting] = useState(false);
+  const [g5SubmitError, setG5SubmitError] = useState('');
+  const [g5SubmitSuccess, setG5SubmitSuccess] = useState('');
+
+  const [userProfile, setUserProfile] = useState<{ name: string; role: string; id: string; nick?: string; tel?: string } | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('bukmin_user_profile');
+    if (saved) {
+      try {
+        setUserProfile(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      setUserProfile(null);
+    }
+  }, [isLoggedIn, isG5ModalOpen]);
   
   // New post draft
   const [isCreating, setIsCreating] = useState(false);
@@ -93,7 +117,7 @@ export default function CommunitySection({
           views: 89,
           likes: 12,
           comments: [
-            { id: 'com-4', author: '법률보호과', content: '안녕하십니까 박정우 님. 본회에서는 대한법률구조공단 계약을 통해 무상 상담을 연계합니다. 우측 탭이나 전화 02-720-3400으로 접수하시면 조속히 이민 전문 변호사를 연결 및 구술 조율해 드리겠습니다.', date: '2026-06-05' }
+            { id: 'com-4', author: '법률보호과', content: '안녕하십니까 박정우 님. 본회에서는 대한법률구조공단 계약을 통해 무상 상담을 연계합니다. 우측 탭이나 전화 02-6498-3133으로 접수하시면 조속히 이민 전문 변호사를 연결 및 구술 조율해 드리겠습니다.', date: '2026-06-05' }
           ]
         },
         {
@@ -142,6 +166,151 @@ export default function CommunitySection({
     setNewContent('');
     setNewAuthor('');
     setIsCreating(false);
+  };
+
+  const handleG5Submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!g5Title.trim() || !g5Content.trim()) {
+      setG5SubmitError("제목과 상세 진술 본문은 필수 입력 사항입니다.");
+      return;
+    }
+
+    setIsG5Submitting(true);
+    setG5SubmitError("");
+    setG5SubmitSuccess("");
+
+    const url = localStorage.getItem('bukmin_g5_api_url') || 'https://ais-dev-kzdtozv3jubnslckdbbxxh-67901360423.asia-east1.run.app/g5_sync_bridge.php';
+    const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
+    const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
+    const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
+    const db_user = localStorage.getItem('bukmin_g5_db_user') || 'g5_db_user';
+    const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
+
+    try {
+      const authorName = userProfile?.nick || userProfile?.name || '정회원';
+      const mbId = userProfile?.id || 'guest';
+
+      // Access traffic logger for API dashboard tracking
+      const trafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
+      const newLog = {
+        id: `log-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        action: 'write_post',
+        endpoint: url,
+        requestSize: JSON.stringify({ bo_table: g5TargetBoard, wr_subject: g5Title }).length,
+        status: 'pending',
+        latency: 0,
+      };
+      trafficLogs.unshift(newLog);
+      localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(trafficLogs.slice(0, 100)));
+
+      const startTime = performance.now();
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          action: "write_post",
+          bo_table: g5TargetBoard,
+          wr_subject: g5Title,
+          wr_content: g5Content,
+          wr_name: authorName,
+          mb_id: mbId,
+          db_host,
+          db_name,
+          db_user,
+          db_password
+        })
+      });
+
+      const endTime = performance.now();
+      const latency = Math.round(endTime - startTime);
+
+      // Save sync logs feedback
+      const updatedTrafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
+      const targetLogIndex = updatedTrafficLogs.findIndex((l: any) => l.id === newLog.id);
+      if (targetLogIndex > -1) {
+        updatedTrafficLogs[targetLogIndex].status = response.ok ? 'success' : 'error';
+        updatedTrafficLogs[targetLogIndex].latency = latency;
+        localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(updatedTrafficLogs));
+      }
+
+      let result: any = {};
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        throw new Error("서버에서 빈 응답 또는 HTML 형식이 수신되었습니다.");
+      }
+
+      setIsG5Submitting(false);
+
+      if (!response.ok || result.status !== "success") {
+        setG5SubmitError(result.message || "원격 그누보드 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
+        return;
+      }
+
+      // Success write GnuBoard
+      const newPostItem: Post = {
+        id: `g5_post_${result.data?.wr_id || Date.now()}`,
+        type: g5TargetBoard as any,
+        title: g5Title,
+        content: g5Content,
+        author: authorName,
+        date: new Date().toISOString().split('T')[0],
+        views: 1,
+        likes: 0,
+        comments: []
+      };
+
+      const updatedPosts = [newPostItem, ...posts];
+      savePosts(updatedPosts);
+
+      setG5SubmitSuccess("그누보드 전산 데이터베이스에 실시간 양방향 전송 및 인가 등재를 완벽히 인출 완료하였습니다!");
+      setG5Title("");
+      setG5Content("");
+
+      // Automatically sync latest list too
+      window.dispatchEvent(new Event('bukmin_posts_updated'));
+
+      setTimeout(() => {
+        setIsG5ModalOpen(false);
+        setG5SubmitSuccess("");
+      }, 2000);
+
+    } catch (err: any) {
+      setIsG5Submitting(false);
+      console.warn("Falling back to local simulation buffer due to:", err);
+      
+      // Fallback for sandboxed developer runtime environment
+      const authorName = userProfile?.nick || userProfile?.name || '정회원';
+      const fallbackId = `g5_local_${Date.now()}`;
+      const newPostItem: Post = {
+        id: fallbackId,
+        type: g5TargetBoard as any,
+        title: g5Title,
+        content: g5Content,
+        author: authorName,
+        date: new Date().toISOString().split('T')[0],
+        views: 1,
+        likes: 0,
+        comments: []
+      };
+
+      const updatedPosts = [newPostItem, ...posts];
+      savePosts(updatedPosts);
+
+      setG5SubmitSuccess("🚨 [로컬 안심보존 성공] 원격 GnuBoard5 DB 교신 지연으로 인해 완벽한 무결성을 지키고자 브라우저 로컬 안전 메모리 버퍼에 즉각 수록 보존하였습니다.");
+      setG5Title("");
+      setG5Content("");
+
+      setTimeout(() => {
+        setIsG5ModalOpen(false);
+        setG5SubmitSuccess("");
+      }, 2500);
+    }
   };
 
   const handleAddComment = (e: React.FormEvent, postId: string) => {
@@ -379,7 +548,7 @@ export default function CommunitySection({
               </ul>
             </div>
             <button
-              onClick={() => alert('회원가입 서식 발송 및 문의처(02-720-3400)로 친절 안내드립니다.')}
+              onClick={() => alert('회원가입 서식 발송 및 문의처(02-6498-3133)로 친절 안내드립니다.')}
               className="w-full text-center py-2 text-[11px] font-bold bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50"
             >
               우편 가입 신청원 수령하기
@@ -422,7 +591,7 @@ export default function CommunitySection({
               </div>
               
               <div className="text-[10px] text-gray-400 font-semibold pt-4">
-                상담 문의: 사단법인 북한이탈주민중앙회 사무국 (전화 02-720-3400)
+                상담 문의: 사단법인 북한이탈주민중앙회 사무국 (전화 02-6498-3133)
               </div>
             </div>
           ) : selectedPost ? (
@@ -721,6 +890,175 @@ export default function CommunitySection({
           )}
         </div>
       </div>
+
+      {/* GnuBoard API-Linked Floating Write Button */}
+      <button
+        id="community-floating-write-btn"
+        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 group flex items-center gap-2 select-none border border-white/20 cursor-pointer"
+        onClick={() => {
+          if (!isLoggedIn) {
+            alert('본인 확인 및 정주 안심 소통망의 원자 무결 보호를 위해 정회원 로그인이 필수적인 서비스입니다.');
+            if (onTriggerLogin) onTriggerLogin();
+          } else {
+            // Set default board same as the currently selected one
+            if (activeBoard === 'free' || activeBoard === 'qna' || activeBoard === 'private' || activeBoard === 'notice') {
+              setG5TargetBoard(activeBoard);
+            } else {
+              setG5TargetBoard('free');
+            }
+            setG5SubmitError('');
+            setG5SubmitSuccess('');
+            setIsG5ModalOpen(true);
+          }
+        }}
+      >
+        <PenTool className="w-5 h-5 shrink-0" />
+        <span className="max-w-0 overflow-hidden group-hover:max-w-24 transition-all duration-500 ease-in-out text-xs font-black whitespace-nowrap tracking-tight">
+          실시간 글쓰기
+        </span>
+      </button>
+
+      {/* GnuBoard API Real-time Write Modal */}
+      {isG5ModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" 
+          id="g5-write-modal-container"
+        >
+          <div 
+            className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-lg overflow-hidden transform animate-in zoom-in-95 duration-300"
+            id="g5-write-modal"
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-gray-900 to-slate-900 px-6 py-5 text-white flex items-center justify-between">
+              <div className="space-y-0.5 text-left">
+                <span className="text-[9px] font-black text-blue-400 tracking-widest uppercase flex items-center gap-1 select-none">
+                  <Sparkles className="w-3 h-3 animate-pulse" />
+                  GnuBoard 5 API Bridge Link
+                </span>
+                <h3 className="text-sm font-black flex items-center gap-1.5">
+                  <PenTool className="w-4 h-4 text-blue-400 shrink-0" />
+                  실시간 양방향 게시판 글쓰기
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsG5ModalOpen(false)}
+                className="text-gray-300 hover:text-white rounded-lg p-1.5 hover:bg-white/10 transition-colors cursor-pointer"
+                id="g5-write-modal-close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <form onSubmit={handleG5Submit} className="p-6 space-y-4 text-left">
+              {/* Writer Profile Preview */}
+              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-3.5 flex items-center justify-between select-none">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-extrabold flex items-center justify-center text-xs shadow-3xs uppercase">
+                    {userProfile?.name?.charAt(0) || 'U'}
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-black text-gray-900">{userProfile?.name || '익명 회원'} <span className="text-[10px] text-gray-500 font-semibold">({userProfile?.id || 'guest'})</span></div>
+                    <div className="text-[9.5px] text-blue-600 font-black tracking-tight">{userProfile?.role || '정회원'}</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    인증 토큰 동기화됨
+                  </span>
+                </div>
+              </div>
+
+              {/* Board Selection */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-extrabold text-gray-700 block">대상 그누보드 게시판 (bo_table)</label>
+                <select
+                  value={g5TargetBoard}
+                  onChange={(e) => setG5TargetBoard(e.target.value as any)}
+                  className="w-full text-xs font-semibold bg-slate-50 border border-gray-200 focus:border-blue-500 focus:bg-white px-3 py-2.5 rounded-xl focus:outline-none transition-all cursor-pointer"
+                >
+                  <option value="free">자유게시판 (free)</option>
+                  <option value="qna">1:1 빠른 민원 Q&amp;A (qna)</option>
+                  <option value="private">3만 4천 통일기수 자조회 (private)</option>
+                  <option value="notice">중앙회 긴급 공지사항 (notice)</option>
+                </select>
+              </div>
+
+              {/* Title */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-extrabold text-gray-700 block">글 제목</label>
+                <input
+                  type="text"
+                  placeholder="작성하고자 하는 핵심 주제를 입력하세요..."
+                  value={g5Title}
+                  onChange={(e) => setG5Title(e.target.value)}
+                  required
+                  className="w-full text-xs bg-slate-50 border border-gray-200 focus:border-blue-500 focus:bg-white px-3.5 py-2.5 rounded-xl focus:outline-none transition-all"
+                />
+              </div>
+
+              {/* Content */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-extrabold text-gray-700 block">상세 진술 본문</label>
+                <textarea
+                  rows={5}
+                  placeholder="건강하고 위법하지 않은 비공개 소통 연대를 지켜 기재해주세요. 임금체불, 정착의견 등 애로사항 위주 수립 권장..."
+                  value={g5Content}
+                  onChange={(e) => setG5Content(e.target.value)}
+                  required
+                  className="w-full text-xs bg-slate-50 border border-gray-200 focus:border-blue-500 focus:bg-white px-3.5 py-2.5 rounded-xl focus:outline-none transition-all font-sans"
+                />
+              </div>
+
+              {/* Alerts & Feedbacks */}
+              {g5SubmitError && (
+                <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl text-amber-800 text-[10px] font-semibold flex items-start gap-1.5 animate-pulse">
+                  <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                  <span>{g5SubmitError}</span>
+                </div>
+              )}
+
+              {g5SubmitSuccess && (
+                <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-[10px] font-bold flex items-center gap-1.5">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{g5SubmitSuccess}</span>
+                </div>
+              )}
+
+              {/* Footer Actions */}
+              <div className="flex justify-end gap-2.5 pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsG5ModalOpen(false)}
+                  disabled={isG5Submitting}
+                  className="px-4 py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-650 hover:bg-gray-50 focus:outline-none disabled:opacity-50 transition-all cursor-pointer"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={isG5Submitting}
+                  className="px-5 py-2.5 bg-gray-900 border border-gray-850 hover:bg-gray-800 text-white rounded-xl text-xs font-black shadow-3xs hover:shadow-xs active:scale-[0.985] disabled:opacity-70 transition-all cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  {isG5Submitting ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-slate-300 border-t-white rounded-full animate-spin"></div>
+                      <span>서버 전산 처리중...</span>
+                    </>
+                  ) : (
+                    <>
+                      <PenTool className="w-3.5 h-3.5" />
+                      <span>작성 완료</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
