@@ -1,6 +1,89 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles, Share2, Link2, MessageCircle, X, AlertCircle } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles, Share2, Link2, MessageCircle, X, AlertCircle, Shield, Award, User } from 'lucide-react';
 import { Post, Comment } from '../types';
+
+// Helper to determine deterministic comment author profile styling & rank levels
+const getCommentAuthorMeta = (authorName: string) => {
+  const name = authorName || '익명';
+  const initial = name.charAt(0);
+  
+  // Decide BG color based on name string code
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = [
+    { bg: 'bg-indigo-50 text-indigo-700 border-indigo-100', dot: 'bg-indigo-500' },
+    { bg: 'bg-emerald-50 text-emerald-700 border-emerald-100', dot: 'bg-emerald-500' },
+    { bg: 'bg-blue-50 text-blue-700 border-blue-100', dot: 'bg-blue-500' },
+    { bg: 'bg-violet-50 text-violet-700 border-violet-100', dot: 'bg-violet-550' },
+    { bg: 'bg-rose-50 text-rose-700 border-rose-100', dot: 'bg-rose-500' },
+    { bg: 'bg-amber-50 text-amber-700 border-amber-100', dot: 'bg-amber-500' },
+  ];
+  const colorScheme = colors[Math.abs(hash) % colors.length];
+
+  let levelText = 'Lv.2 정회원';
+  let badgeColor = 'bg-slate-50 text-slate-750 border-slate-200/50';
+  let icon = <User className="w-3 h-3 text-slate-500" />;
+  
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('이은택') || lowerName.includes('사무총장') || lowerName.includes('admin') || lowerName.includes('관리자') || lowerName.includes('중앙회')) {
+    levelText = 'Lv.10 사무총장/운영진';
+    badgeColor = 'bg-rose-50 text-rose-700 border-rose-200/60 font-black';
+    icon = <Shield className="w-3 h-3 text-rose-600 animate-pulse" />;
+  } else if (lowerName.includes('staff') || lowerName.includes('스태프') || lowerName.includes('임직원') || lowerName.includes('운용위')) {
+    levelText = 'Lv.8 운영진';
+    badgeColor = 'bg-amber-50 text-amber-700 border-amber-200/60 font-bold';
+    icon = <Award className="w-3 h-3 text-amber-600" />;
+  } else if (lowerName.includes('자조') || lowerName.includes('기수') || lowerName.includes('회원')) {
+    levelText = 'Lv.4 자조회원';
+    badgeColor = 'bg-blue-50 text-blue-700 border-blue-200/60 font-semibold';
+    icon = <Sparkles className="w-3 h-3 text-blue-550" />;
+  } else if (lowerName.includes('익명') || lowerName.includes('guest') || lowerName.includes('손님')) {
+    levelText = 'Lv.1 Jun';
+    badgeColor = 'bg-gray-100 text-gray-500 border-gray-200/40 text-[9.5px]';
+    icon = <User className="w-3 h-3 text-gray-400" />;
+  }
+
+  // Dynamic activity/point representation matching request (열혈회원, 봉사단원, etc.)
+  let activityBadgeText = '';
+  let activityBadgeStyle = '';
+
+  const charSum = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const activityCode = charSum % 4;
+
+  if (lowerName.includes('이은택') || lowerName.includes('사무총장') || lowerName.includes('admin') || lowerName.includes('관리자') || lowerName.includes('중앙회')) {
+    activityBadgeText = '👑 총괄 지휘봉사단';
+    activityBadgeStyle = 'bg-rose-100/50 text-rose-800 border-rose-200/60 font-extrabold';
+  } else if (lowerName.includes('staff') || lowerName.includes('스태프') || lowerName.includes('임직원') || lowerName.includes('운용위')) {
+    activityBadgeText = '💖 중앙 운영지원단';
+    activityBadgeStyle = 'bg-amber-100/50 text-amber-800 border-amber-200/60 font-bold';
+  } else {
+    if (activityCode === 0) {
+      activityBadgeText = '🔥 열혈소통 우수기수';
+      activityBadgeStyle = 'bg-orange-50 text-orange-700 border-orange-100 px-2 py-0.5 font-bold';
+    } else if (activityCode === 1) {
+      activityBadgeText = '🤝 따뜻한 봉사단원';
+      activityBadgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-100 px-2 py-0.5 font-bold';
+    } else if (activityCode === 2) {
+      activityBadgeText = '⭐ 통일선봉 기여회원';
+      activityBadgeStyle = 'bg-blue-50 text-blue-700 border-blue-100 px-2 py-0.5 font-bold';
+    } else {
+      activityBadgeText = '🌱 도약하는 새싹회원';
+      activityBadgeStyle = 'bg-slate-50 text-slate-600 border-slate-200/60 px-2 py-0.5';
+    }
+  }
+
+  return {
+    initial,
+    colorScheme,
+    levelText,
+    badgeColor,
+    icon,
+    activityBadgeText,
+    activityBadgeStyle
+  };
+};
 
 interface CommunitySectionProps {
   isLoggedIn?: boolean;
@@ -25,6 +108,11 @@ export default function CommunitySection({
   const [isG5Submitting, setIsG5Submitting] = useState(false);
   const [g5SubmitError, setG5SubmitError] = useState('');
   const [g5SubmitSuccess, setG5SubmitSuccess] = useState('');
+
+  // GnuBoard API Comment write states
+  const [isG5CommentSubmitting, setIsG5CommentSubmitting] = useState(false);
+  const [g5CommentError, setG5CommentError] = useState('');
+  const [g5CommentSuccess, setG5CommentSuccess] = useState('');
 
   const [userProfile, setUserProfile] = useState<{ name: string; role: string; id: string; nick?: string; tel?: string } | null>(null);
 
@@ -313,34 +401,168 @@ export default function CommunitySection({
     }
   };
 
-  const handleAddComment = (e: React.FormEvent, postId: string) => {
+  const handleAddComment = async (e: React.FormEvent, postId: string) => {
     e.preventDefault();
-    if (!newCommentAuthor.trim() || !newCommentText.trim()) return;
+    if (!isLoggedIn) {
+      setG5CommentError("댓글을 작성하려면 본인 확인 및 정회원 로그인이 필수적입니다.");
+      return;
+    }
+    if (!newCommentText.trim()) {
+      setG5CommentError("댓글 내용을 고르게 입력해 주세요.");
+      return;
+    }
 
-    const updated = posts.map((p) => {
-      if (p.id === postId) {
-        const freshComment: Comment = {
-          id: `com-${Date.now()}`,
-          author: newCommentAuthor,
-          content: newCommentText,
-          date: new Date().toISOString().split('T')[0]
-        };
-        const updatedPost = {
-          ...p,
-          comments: [...p.comments, freshComment]
-        };
-        // also sync visual selected active post details
-        if (selectedPost?.id === postId) {
-          setSelectedPost(updatedPost);
-        }
-        return updatedPost;
+    setIsG5CommentSubmitting(true);
+    setG5CommentError("");
+    setG5CommentSuccess("");
+
+    const authorName = userProfile?.nick || userProfile?.name || '정회원';
+    const mbId = userProfile?.id || 'guest';
+
+    // Retrieve target post
+    const targetPost = posts.find(p => p.id === postId);
+    const bo_table = targetPost?.type || 'free';
+
+    // Determine numerical wr_id for GnuBoard
+    const numMatch = postId.match(/\d+/);
+    const wr_id = numMatch ? parseInt(numMatch[0], 10) : 1;
+
+    const url = localStorage.getItem('bukmin_g5_api_url') || 'https://ais-dev-kzdtozv3jubnslckdbbxxh-67901360423.asia-east1.run.app/g5_sync_bridge.php';
+    const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
+    const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
+    const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
+    const db_user = localStorage.getItem('bukmin_g5_db_user') || 'g5_db_user';
+    const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
+
+    try {
+      // Access traffic logger for API dashboard tracking
+      const trafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
+      const newLog = {
+        id: `comment-log-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        action: 'write_comment',
+        endpoint: url,
+        requestSize: JSON.stringify({ bo_table, wr_id, wr_content: newCommentText }).length,
+        status: 'pending',
+        latency: 0,
+      };
+      trafficLogs.unshift(newLog);
+      localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(trafficLogs.slice(0, 100)));
+
+      const startTime = performance.now();
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          action: "write_comment",
+          bo_table,
+          wr_id,
+          wr_content: newCommentText,
+          wr_name: authorName,
+          mb_id: mbId,
+          db_host,
+          db_name,
+          db_user,
+          db_password
+        })
+      });
+
+      const endTime = performance.now();
+      const latency = Math.round(endTime - startTime);
+
+      // Save sync logs feedback
+      const updatedTrafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
+      const targetLogIndex = updatedTrafficLogs.findIndex((l: any) => l.id === newLog.id);
+      if (targetLogIndex > -1) {
+        updatedTrafficLogs[targetLogIndex].status = response.ok ? 'success' : 'error';
+        updatedTrafficLogs[targetLogIndex].latency = latency;
+        localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(updatedTrafficLogs));
       }
-      return p;
-    });
 
-    savePosts(updated);
-    setNewCommentAuthor('');
-    setNewCommentText('');
+      let result: any = {};
+      try {
+        result = await response.json();
+      } catch (jsonErr) {
+        throw new Error("서버에서 빈 응답 또는 올바르지 않은 형식이 수신되었습니다.");
+      }
+
+      setIsG5CommentSubmitting(false);
+
+      if (!response.ok || result.status !== "success") {
+        setG5CommentError(result.message || "원격 그누보드 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
+        return;
+      }
+
+      const freshCommentId = `com-g5-${result.data?.comment_id || Date.now()}`;
+      const freshComment: Comment = {
+        id: freshCommentId,
+        author: authorName,
+        content: newCommentText,
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      const updated = posts.map((p) => {
+        if (p.id === postId) {
+          const updatedPost = {
+            ...p,
+            comments: [...p.comments, freshComment]
+          };
+          if (selectedPost?.id === postId) {
+            setSelectedPost(updatedPost);
+          }
+          return updatedPost;
+        }
+        return p;
+      });
+
+      savePosts(updated);
+      setNewCommentText('');
+      setG5CommentSuccess("그누보드 전산 데이터베이스에 실시간 양방향 댓글 등재를 완벽히 완료하였습니다!");
+
+      window.dispatchEvent(new Event('bukmin_posts_updated'));
+
+      setTimeout(() => {
+        setG5CommentSuccess("");
+      }, 3000);
+
+    } catch (err) {
+      console.warn("Falling back to local simulation due to network barrier:", err);
+      setIsG5CommentSubmitting(false);
+
+      // Stable local save
+      const freshComment: Comment = {
+        id: `com-local-${Date.now()}`,
+        author: authorName,
+        content: newCommentText,
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      const updated = posts.map((p) => {
+        if (p.id === postId) {
+          const updatedPost = {
+            ...p,
+            comments: [...p.comments, freshComment]
+          };
+          if (selectedPost?.id === postId) {
+            setSelectedPost(updatedPost);
+          }
+          return updatedPost;
+        }
+        return p;
+      });
+
+      savePosts(updated);
+      setNewCommentText('');
+      setG5CommentSuccess("🚨 [로컬 임시보존] 원격 GnuBoard5 DB 교신 지연으로 에러방지 및 완벽한 무결 조존을 위해 브라우저 로컬 안전 메모리에 수록하였습니다.");
+
+      setTimeout(() => {
+        setG5CommentSuccess("");
+      }, 3500);
+    }
   };
 
   const handleLikePost = (postId: string) => {
@@ -689,58 +911,150 @@ export default function CommunitySection({
 
               {/* Comments list */}
               <div className="space-y-4">
-                <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1.5 uppercase tracking-wide">
-                  <MessageSquare className="w-4 h-4 text-gray-400" /> 댓글 피드백 ({selectedPost.comments.length})
+                <h4 className="text-xs font-bold text-gray-900 flex items-center gap-1.5 uppercase tracking-wide select-none">
+                  <MessageSquare className="w-4 h-4 text-blue-500" /> 댓글 피드백 ({selectedPost.comments.length})
                 </h4>
 
                 <div className="space-y-3">
                   {selectedPost.comments.length === 0 ? (
-                    <p className="text-xs text-gray-400 italic">등록된 댓글이 없습니다. 첫 의견을 작성해 주세요.</p>
+                    <p className="text-xs text-gray-400 italic bg-slate-50/50 rounded-2xl p-6 border border-dashed border-gray-100 text-center select-none">등록된 댓글이 없습니다. 첫 의견을 작성해 주세요.</p>
                   ) : (
-                    selectedPost.comments.map((com) => (
-                      <div key={com.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 space-y-1 max-w-full">
-                        <div className="flex items-center justify-between text-[11px]">
-                          <strong className="text-gray-800 font-bold">{com.author}</strong>
-                          <span className="text-gray-400 font-sans">{com.date}</span>
+                    selectedPost.comments.map((com) => {
+                      const meta = getCommentAuthorMeta(com.author);
+                      return (
+                        <div 
+                          key={com.id} 
+                          className="p-4 bg-white hover:bg-slate-50/40 rounded-2xl border border-gray-150 shadow-3xs hover:shadow-2xs transition-all duration-200 flex gap-3.5 items-start relative overflow-hidden"
+                        >
+                          {/* Rich Profile Icon / Initial Avatar */}
+                          <div className={`w-8.5 h-8.5 rounded-full shrink-0 flex items-center justify-center font-black text-xs border ${meta.colorScheme.bg} select-none uppercase shadow-3xs`}>
+                            {meta.initial}
+                          </div>
+
+                          {/* Profile Details */}
+                          <div className="space-y-1.5 flex-1 min-w-0 text-left">
+                            <div className="flex items-center justify-between gap-1.5 flex-wrap">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-gray-900 font-black text-xs leading-none select-all font-sans">
+                                  {com.author}
+                                </span>
+                                
+                                {/* Dynamic Level Icon Badge */}
+                                <span className={`inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded-full border ${meta.badgeColor} select-none`}>
+                                  {meta.icon}
+                                  <span>{meta.levelText}</span>
+                                </span>
+
+                                {/* Dynamic Activity Status Badge */}
+                                <span className={`inline-flex items-center gap-1 text-[9.5px] px-2 py-0.5 rounded-full border ${meta.activityBadgeStyle} select-none`}>
+                                  <span>{meta.activityBadgeText}</span>
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-gray-400 font-sans font-medium tracking-tight shrink-0 select-none">
+                                {com.date}
+                              </span>
+                            </div>
+                            <p className="text-xs text-gray-650 leading-relaxed font-sans whitespace-pre-wrap select-text">
+                              {com.content}
+                            </p>
+                          </div>
                         </div>
-                        <p className="text-xs text-gray-600 leading-relaxed font-sans">{com.content}</p>
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
                 {/* Comment Insertion form */}
-                <form
-                  onSubmit={(e) => handleAddComment(e, selectedPost.id)}
-                  className="bg-gray-50/50 border border-gray-100 p-4 rounded-xl space-y-3 mt-4"
-                >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      placeholder="댓글 닉네임"
-                      value={newCommentAuthor}
-                      onChange={(e) => setNewCommentAuthor(e.target.value)}
-                      required
-                      className="text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                  <textarea
-                    rows={2}
-                    placeholder="투명하고 열린 소통을 환영합니다. 예의를 지켜 소견을 자유롭게 남겨보세요..."
-                    value={newCommentText}
-                    onChange={(e) => setNewCommentText(e.target.value)}
-                    required
-                    className="text-xs bg-white border border-gray-200 rounded-lg px-3 py-2 w-full focus:outline-none focus:border-blue-500"
-                  ></textarea>
-                  <div className="flex justify-end">
+                {!isLoggedIn ? (
+                  <div className="bg-slate-50/80 border border-dashed border-gray-200 p-6 rounded-2xl text-center space-y-3 mt-4" id="community-comment-lock-notice">
+                    <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-100 shadow-3xs select-none">
+                      <Lock className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-1">
+                      <h5 className="text-[11.5px] font-extrabold text-slate-800">정회원 소통망 댓글 보호망 가동</h5>
+                      <p className="text-[10px] text-gray-500 font-medium max-w-md mx-auto leading-relaxed">
+                        댓글 악성 유포 및 신변 불안 요인 방지와 무결 신성 보호를 위해 본인 확인 정회원 로그인이 필수적입니다.
+                      </p>
+                    </div>
                     <button
-                      type="submit"
-                      className="bg-gray-900 text-white text-[11px] font-bold px-4 py-2 rounded-lg"
+                      type="button"
+                      onClick={() => onTriggerLogin && onTriggerLogin()}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[10.5px] rounded-xl shadow-3xs transition-transform cursor-pointer"
                     >
-                      의견 등록 완료
+                      <Lock className="w-3.5 h-3.5" />
+                      <span>1초 안심 간편 로그인 수행</span>
                     </button>
                   </div>
-                </form>
+                ) : (
+                  <form
+                    onSubmit={(e) => handleAddComment(e, selectedPost.id)}
+                    className="bg-gray-50/50 border border-gray-100 p-4.5 rounded-2xl space-y-3 mt-4"
+                    id="community-comment-authenticated-form"
+                  >
+                    {/* Logged in Profile Line */}
+                    <div className="flex items-center justify-between text-[11px] select-none border-b border-gray-100 pb-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                        <span className="text-gray-500">작성자: </span>
+                        <strong className="text-gray-800 font-extrabold">
+                          {userProfile?.nick || userProfile?.name || '정회원'} 
+                          <span className="text-[9.5px] text-gray-400 font-medium"> ({userProfile?.id || 'guest'})</span>
+                        </strong>
+                        <span className="bg-blue-50 text-blue-600 text-[9.5px] font-black px-1.5 py-0.5 rounded-full select-none">
+                          {userProfile?.role || '정회원'}
+                        </span>
+                      </div>
+                      <span className="text-[9.5px] font-bold text-gray-400">
+                        GnuBoard 5 Real-time API
+                      </span>
+                    </div>
+
+                    <textarea
+                      rows={2.5}
+                      placeholder="통일기수 안심 소통을 가치 있게 존엄적으로 수립해 남겨주세요..."
+                      value={newCommentText}
+                      onChange={(e) => setNewCommentText(e.target.value)}
+                      required
+                      disabled={isG5CommentSubmitting}
+                      className="text-xs bg-white border border-gray-200 rounded-xl px-3.5 py-2.5 w-full focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 font-sans disabled:opacity-50"
+                    ></textarea>
+
+                    {/* Alerts & Feedback */}
+                    {g5CommentError && (
+                      <div className="p-2.5 bg-rose-50 border border-rose-100 rounded-xl text-rose-800 text-[10px] font-semibold flex items-center gap-1.5 animate-pulse">
+                        <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                        <span>{g5CommentError}</span>
+                      </div>
+                    )}
+
+                    {g5CommentSuccess && (
+                      <div className="p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-[10px] font-bold flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600 shrink-0 animate-bounce" />
+                        <span>{g5CommentSuccess}</span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end pt-1">
+                      <button
+                        type="submit"
+                        disabled={isG5CommentSubmitting}
+                        className="bg-gray-900 border border-gray-850 hover:bg-gray-850 text-white text-[11px] font-black px-5 py-2.5 rounded-xl shadow-3xs cursor-pointer inline-flex items-center gap-1.5 select-none disabled:opacity-50"
+                      >
+                        {isG5CommentSubmitting ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-slate-300 border-t-white rounded-full animate-spin"></div>
+                            <span>전산 검인 중...</span>
+                          </>
+                        ) : (
+                          <>
+                            <PenTool className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                            <span>실시간 의견 등록 완료</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           ) : isCreating ? (

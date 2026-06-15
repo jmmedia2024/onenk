@@ -32,7 +32,9 @@ import {
   RefreshCw,
   Settings,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Database,
+  Clock
 } from 'lucide-react';
 
 import AboutSection from './components/AboutSection';
@@ -221,7 +223,17 @@ const galleryItemVariants = {
 interface UserProfileEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  userProfile: { id: string; name: string; role: string; nick?: string; tel?: string; };
+  userProfile: { 
+    id: string; 
+    name: string; 
+    role: string; 
+    nick?: string; 
+    tel?: string;
+    email?: string;
+    point?: number;
+    joinedAt?: string;
+    todayLogin?: string;
+  };
   onSave: (mb_id: string, newNick: string, newTel: string) => Promise<boolean>;
   isSaving: boolean;
   errorMsg: string;
@@ -282,13 +294,13 @@ const UserProfileEditModal = ({
         <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-blue-600 via-teal-500 to-indigo-600"></div>
 
         {/* Modal Header */}
-        <div className="flex justify-between items-center mb-6" id="profile-modal-header">
+        <div className="flex justify-between items-center mb-5" id="profile-modal-header">
           <div className="text-left">
             <h3 className="text-base font-extrabold text-gray-950 tracking-tight flex items-center gap-2">
-              <Settings className="w-5 h-5 text-blue-600" />
-              내 정보 수정
+              <Settings className="w-5 h-5 text-blue-600 animate-spin-slow" />
+              내 소중한 원격 그누보드 정보
             </h3>
-            <p className="text-[11px] text-gray-400 mt-0.5">그누보드 공식 원격 동기화 회원 마이페이지</p>
+            <p className="text-[11px] text-gray-400 mt-0.5">사단법인 북민회 안심 행정망 마이페이지</p>
           </div>
           <button 
             type="button"
@@ -312,10 +324,10 @@ const UserProfileEditModal = ({
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4 text-left" id="profile-edit-form">
+          <div className="space-y-4 text-left">
             
             {/* Read-only account info card */}
-            <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-4 flex gap-3.5 items-center select-none mb-2">
+            <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-4 flex gap-3.5 items-center select-none">
               <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">
                 {userProfile.name.charAt(0)}
               </div>
@@ -328,74 +340,122 @@ const UserProfileEditModal = ({
               </span>
             </div>
 
-            {/* Editing fields */}
-            <div className="space-y-1.5 flex flex-col items-start w-full">
-              <label className="text-xs font-bold text-gray-600">닉네임 변경 (mb_nick)</label>
-              <input
-                type="text"
-                placeholder="변경할 닉네임을 기재해주세요"
-                value={nick}
-                onChange={(e) => {
-                  setNick(e.target.value);
-                  setLocalErr('');
-                }}
-                disabled={isSaving}
-                className="w-full text-xs px-4 py-3 border border-gray-200/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 font-semibold bg-white text-gray-800"
-              />
-            </div>
-
-            <div className="space-y-1.5 flex flex-col items-start w-full">
-              <label className="text-xs font-bold text-gray-600">연락 연락처 변경 (mb_tel)</label>
-              <input
-                type="text"
-                placeholder="연락처 정보를 기재해주세요 (예: 010-1234-5678)"
-                value={tel}
-                onChange={(e) => {
-                  setTel(e.target.value);
-                  setLocalErr('');
-                }}
-                disabled={isSaving}
-                className="w-full text-xs px-4 py-3 border border-gray-200/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 font-semibold bg-white text-gray-800"
-              />
-            </div>
-
-            {/* Error notifications */}
-            {(errorMsg || localErr) && (
-              <div className="flex items-start gap-2 bg-red-50/80 border border-red-100/60 p-3 rounded-xl text-red-700 text-xs text-left" id="profile-error-alert animate-shake">
-                <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
-                <span className="font-semibold leading-relaxed">{localErr || errorMsg}</span>
+            {/* 그누보드 5 실시간 DB 수집 메타 정보 Grid 카드 */}
+            <div className="bg-slate-50/50 border border-slate-200/55 rounded-2xl p-4 space-y-3 select-none" id="profile-g5-metadata-box">
+              <div className="flex items-center justify-between border-b border-gray-150 pb-2">
+                <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
+                  <Database className="w-4 h-4 text-blue-500" />
+                  원격 그누보드5 DB 연합 필드 수집
+                </span>
+                <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-50 text-emerald-600 font-extrabold px-1.5 py-0.5 rounded-md border border-emerald-100 select-none">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 animate-ping"></span>
+                  원격 DB 실시간
+                </span>
               </div>
-            )}
+              
+              <div className="grid grid-cols-2 gap-2 text-[10.5px]">
+                <div className="bg-white p-2.5 rounded-xl border border-gray-100 space-y-0.5">
+                  <span className="text-[9px] text-gray-400 font-bold block">그누보드 누적 포인트</span>
+                  <span className="text-gray-900 font-extrabold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    {userProfile.point !== undefined ? userProfile.point.toLocaleString() : '0'} P
+                  </span>
+                </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-2.5 pt-2" id="profile-form-buttons">
-              <button
-                type="button"
-                onClick={onClose}
-                disabled={isSaving}
-                className="flex-1 py-3 border border-gray-200 text-gray-500 rounded-xl text-xs font-bold bg-white hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
-              >
-                닫기
-              </button>
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-75"
-              >
-                {isSaving ? (
-                  <>
-                    <RefreshCw className="animate-spin h-3.5 w-3.5 text-white" />
-                    <span>저장 중...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-3.5 h-3.5" />
-                    <span>프로필 수정 완료</span>
-                  </>
-                )}
-              </button>
+                <div className="bg-white p-2.5 rounded-xl border border-gray-100 space-y-0.5">
+                  <span className="text-[9px] text-gray-400 font-bold block">가입년월일 (mb_datetime)</span>
+                  <span className="text-gray-800 font-bold truncate block">
+                    {userProfile.joinedAt ? userProfile.joinedAt.split(' ')[0] : '임시 세션(데모)'}
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-gray-100 space-y-0.5 col-span-2">
+                  <span className="text-[9px] text-gray-400 font-bold block">원격 등록 이메일 주소 (mb_email)</span>
+                  <span className="text-gray-800 font-bold truncate block">
+                    {userProfile.email || '등록된 이메일이 존재성 부재'}
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-xl border border-gray-100 space-y-0.5 col-span-2">
+                  <span className="text-[9px] text-gray-400 font-bold block">최근 접속 기록 (mb_today_login)</span>
+                  <span className="text-gray-800 font-semibold truncate block flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    {userProfile.todayLogin || '방금 전 실시간 대조'}
+                  </span>
+                </div>
+              </div>
             </div>
-          </form>
+
+            <form onSubmit={handleSubmit} className="space-y-4" id="profile-edit-form">
+              {/* Editing fields */}
+              <div className="space-y-1.5 flex flex-col items-start w-full">
+                <label className="text-xs font-bold text-gray-600">닉네임 변경 (mb_nick)</label>
+                <input
+                  type="text"
+                  placeholder="변경할 닉네임을 기재해주세요"
+                  value={nick}
+                  onChange={(e) => {
+                    setNick(e.target.value);
+                    setLocalErr('');
+                  }}
+                  disabled={isSaving}
+                  className="w-full text-xs px-4 py-3 border border-gray-200/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 font-semibold bg-white text-gray-800"
+                />
+              </div>
+
+              <div className="space-y-1.5 flex flex-col items-start w-full">
+                <label className="text-xs font-bold text-gray-600">연락처 변경 (mb_tel)</label>
+                <input
+                  type="text"
+                  placeholder="연락처 정보를 기재해주세요 (예: 010-1234-5678)"
+                  value={tel}
+                  onChange={(e) => {
+                    setTel(e.target.value);
+                    setLocalErr('');
+                  }}
+                  disabled={isSaving}
+                  className="w-full text-xs px-4 py-3 border border-gray-200/80 rounded-xl focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400 font-semibold bg-white text-gray-800"
+                />
+              </div>
+
+              {/* Error notifications */}
+              {(errorMsg || localErr) && (
+                <div className="flex items-start gap-2 bg-red-50/80 border border-red-100/60 p-3 rounded-xl text-red-700 text-xs text-left" id="profile-error-alert">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span className="font-semibold leading-relaxed">{localErr || errorMsg}</span>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2.5 pt-2" id="profile-form-buttons">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={isSaving}
+                  className="flex-1 py-3 border border-gray-200 text-gray-500 rounded-xl text-xs font-bold bg-white hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  닫기
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md active:scale-98 transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-75"
+                >
+                  {isSaving ? (
+                    <>
+                      <RefreshCw className="animate-spin h-3.5 w-3.5 text-white" />
+                      <span>저장 중...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      <span>프로필 수정 완료</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
 
       </div>
@@ -627,13 +687,33 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return localStorage.getItem('bukmin_is_logged_in') === 'true';
   });
-  const [userProfile, setUserProfile] = useState<{ name: string; role: string; id: string; nick?: string; tel?: string } | null>(() => {
+  const [userProfile, setUserProfile] = useState<{ 
+    name: string; 
+    role: string; 
+    id: string; 
+    nick?: string; 
+    tel?: string;
+    email?: string;
+    point?: number;
+    joinedAt?: string;
+    todayLogin?: string;
+  } | null>(() => {
     const saved = localStorage.getItem('bukmin_user_profile');
     return saved ? JSON.parse(saved) : null;
   });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [showLoginSuccessAnim, setShowLoginSuccessAnim] = useState(false);
-  const [animatingProfile, setAnimatingProfile] = useState<{ name: string; role: string; id: string; nick?: string; tel?: string } | null>(null);
+  const [animatingProfile, setAnimatingProfile] = useState<{ 
+    name: string; 
+    role: string; 
+    id: string; 
+    nick?: string; 
+    tel?: string;
+    email?: string;
+    point?: number;
+    joinedAt?: string;
+    todayLogin?: string;
+  } | null>(null);
 
   // Profile Edit modal states
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -683,7 +763,11 @@ export default function App() {
                 name: mem.mb_name || mem.mb_nick || mem.mb_id,
                 role: Number(mem.mb_level) >= 10 ? '최고 관리자' : Number(mem.mb_level) >= 4 ? '게시판장' : '공식 정회원',
                 nick: mem.mb_nick || '',
-                tel: mem.mb_tel || ''
+                tel: mem.mb_tel || '',
+                email: mem.mb_email || '',
+                point: Number(mem.mb_point) || 0,
+                joinedAt: mem.mb_datetime || '',
+                todayLogin: mem.mb_today_login || ''
               });
             }
           }
@@ -738,7 +822,11 @@ export default function App() {
           name: mem.mb_name || mem.mb_nick || mem.mb_id,
           role: Number(mem.mb_level) >= 10 ? '최고 관리자' : Number(mem.mb_level) >= 4 ? '게시판장' : '공식 정회원',
           nick: mem.mb_nick || '',
-          tel: mem.mb_tel || ''
+          tel: mem.mb_tel || '',
+          email: mem.mb_email || '',
+          point: Number(mem.mb_point) || 0,
+          joinedAt: mem.mb_datetime || '',
+          todayLogin: mem.mb_today_login || ''
         };
         triggerLoginWithAnim(profile);
         return true;
@@ -1030,7 +1118,17 @@ export default function App() {
   };
 
   // Help control login
-  const handleLoginSuccess = (profile: { name: string; role: string; id: string; nick?: string; tel?: string }) => {
+  const handleLoginSuccess = (profile: { 
+    name: string; 
+    role: string; 
+    id: string; 
+    nick?: string; 
+    tel?: string;
+    email?: string;
+    point?: number;
+    joinedAt?: string;
+    todayLogin?: string;
+  }) => {
     setIsLoggedIn(true);
     setUserProfile(profile);
     localStorage.setItem('bukmin_is_logged_in', 'true');
@@ -1038,7 +1136,17 @@ export default function App() {
     setIsLoginModalOpen(false);
   };
 
-  const triggerLoginWithAnim = (profile: { name: string; role: string; id: string; nick?: string; tel?: string }) => {
+  const triggerLoginWithAnim = (profile: { 
+    name: string; 
+    role: string; 
+    id: string; 
+    nick?: string; 
+    tel?: string;
+    email?: string;
+    point?: number;
+    joinedAt?: string;
+    todayLogin?: string;
+  }) => {
     setShowLoginSuccessAnim(true);
     setAnimatingProfile(profile);
     
