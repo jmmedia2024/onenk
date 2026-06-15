@@ -644,9 +644,12 @@ export default function AdminSection({
 
       if (response.ok) {
         const data = await response.json();
+        if (data.success === false) {
+          throw new Error(data.message || 'MySQL_DATABASE_ERROR');
+        }
         setSyncSettingsResult({
           success: true,
-          message: data.message || '외부 그누보드 데이터베이스 API에 성공적으로 연결되었습니다!',
+          message: data.message || `외부 그누보드5 DB [${g5DbName}](${g5DbHost})에 API Bridge 터널을 통해 성공적으로 실제 연동되었습니다.`,
           timestamp: new Date().toLocaleTimeString()
         });
         setConsoleLogs((prev) => [
@@ -658,21 +661,18 @@ export default function AdminSection({
         throw new Error(`Server returned HTTP code ${response.status}`);
       }
     } catch (err: any) {
-      console.warn('Simulating connection since endpoint is sandbox or restricted: ', err.message);
-      
-      // Fallback path with interactive validation
-      setTimeout(() => {
-        setIsSyncingSettings(false);
-        setSyncSettingsResult({
-          success: true,
-          message: `외부 그누보드5 DB [${g5DbName}](${g5DbHost})에 API Bridge 터널을 통해 성공적으로 가상 연동되었습니다.`,
-          timestamp: new Date().toLocaleTimeString()
-        });
-        setConsoleLogs((prev) => [
-          ...prev,
-          `[API BRIDGING] GnuBoard Database connection config tested & persisted successfully! (Host: ${g5DbHost})`
-        ]);
-      }, 1200);
+      console.error('Actual connection failed: ', err.message);
+      setIsSyncingSettings(false);
+      setSyncSettingsResult({
+        success: false,
+        message: `실제 연동 오류: GnuBoard 외부 DB [${g5DbName}](${g5DbHost})에 연결을 완벽히 안착시키지 못했습니다.\n(원인: ${err.message || 'CORS 통신 거부 또는 네트워크 대상 오프라인 상태'})`,
+        timestamp: new Date().toLocaleTimeString()
+      });
+      setConsoleLogs((prev) => [
+        ...prev,
+        `[API FAILURE] GnuBoard Database connection error! (Detail: ${err.message})`,
+        ` -> Please check your CORS headers, database credentials, or server firewall configuration.`
+      ]);
     }
   };
 
@@ -4284,13 +4284,13 @@ switch ($action) {
                         {/* Interactive Communications Sandbox */}
                         <div className="glass-card p-6 rounded-3xl border border-blue-150 bg-gradient-to-br from-white to-blue-50/15 space-y-4">
                           <div className="border-b border-blue-100 pb-2.5 text-left">
-                            <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">GnuBoard API Connection Test Sandbox</span>
+                            <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">GnuBoard API Live Connection Verification</span>
                             <h3 className="text-sm font-black text-slate-800 flex items-center gap-1 mt-0.5 font-sans animate-pulse">
                               <RefreshCw className="w-4 h-4 text-blue-600 animate-spin-slow" />
-                              <span>실시간 API 통신 가상 검증 및 통계 실시간 업데이트 샌드박스</span>
+                              <span>실시간 API 실제 연동 검증 및 회원 통계 실시간 정합</span>
                             </h3>
                             <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">
-                              아래 버튼을 클릭하여 GnuBoard API 통신을 실행하십시오. 연결이 성공하면 <strong>통합 대시보드의 회원 통계, 게시글 건수, 그리고 공헌 기금이 실시간으로 100% 동기화 가산 업데이트됩니다.</strong>
+                              아래 버튼을 기동하여 실제 원격지 GnuBoard5 API 통신을 활성화하십시오. API REST Bridge가 실제 통과되면 **원격지의 누적 데이터 카운트(회원, 포스트 정보)가 즉각적인 정밀 검증을 통해 동기화 반영됩니다.**
                             </p>
                           </div>
 
@@ -4306,89 +4306,24 @@ switch ($action) {
                               }`}
                             >
                               <div className="font-extrabold flex items-center gap-1.5 mb-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                                <strong>그누보드 원장 자동 갱신 동기화 완료!</strong>
+                                <span className={`w-2 h-2 rounded-full ${syncSettingsResult.success ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`}></span>
+                                <strong>{syncSettingsResult.success ? '그누보드 원장 실제 수신 검증 완료!' : '그누보드 원격 연결 실패'}</strong>
                                 <span className="text-[9.5px] text-gray-400 font-mono">({syncSettingsResult.timestamp})</span>
                               </div>
-                              <p className="text-slate-650 text-[10px]">{syncSettingsResult.message}</p>
+                              <p className="text-slate-650 text-[10px] whitespace-pre-line">{syncSettingsResult.message}</p>
                             </motion.div>
                           )}
 
                           {/* Trigger Sandbox Action */}
                           <div className="pt-1.5 text-left">
                             <button
-                              type="button"
-                              onClick={async () => {
-                                setIsSyncingSettings(true);
-                                setConsoleLogs((prev) => [
-                                  ...prev,
-                                  `[API DEPLOY RUN] Establishing Connection with remote MariaDB via standard REST action get_stats...`,
-                                  ` -> Target: ${g5ApiUrl || (import.meta as any).env?.VITE_GNUBOARD_API_URL || 'http://onenk.kr/g5/sync_bridge.php'}`,
-                                  ` -> Authorizing with Bearer ${g5ApiKey ? g5ApiKey.substring(0, 5) + '***' : 'bukmin_secure_***'}`
-                                ]);
-
-                                setTimeout(() => {
-                                  // Update Stats Real-time!
-                                  const additionalMembersCount = 3;
-                                  const additionalDonation = 5000000;
-                                  
-                                  // Add new mock G5 members
-                                  const newG5Members = [
-                                    { mb_id: 'g5_ref_lim2', mb_name: '임정열', mb_nick: '평화주의자', mb_level: 3, mb_email: 'g5_lim@naver.com', mb_tel: '010-3849-0128', mb_datetime: '2026-06-13', mb_open: true },
-                                    { mb_id: 'g5_f_oh2', mb_name: '오현서', mb_nick: '바람꽃', mb_level: 2, mb_email: 'g5_oh@daum.net', mb_tel: '010-9284-4820', mb_datetime: '2026-06-13', mb_open: true },
-                                    { mb_id: 'g5_kaeun2', mb_name: '최가은', mb_nick: '아침이슬', mb_level: 2, mb_email: 'g5_kaeun@gmail.com', mb_tel: '010-2910-3849', mb_datetime: '2026-06-13', mb_open: true }
-                                  ];
-                                  
-                                  // Validate if already added to prevent duplicate additions
-                                  setGnuMembers((prev) => {
-                                    const hasAlready = prev.some(m => m.mb_id === 'g5_ref_lim2');
-                                    if (hasAlready) {
-                                      return prev; // keep same
-                                    }
-                                    return [...prev, ...newG5Members];
-                                  });
-
-                                  // Increment other counters
-                                  setTotalMembers((prev) => prev + additionalMembersCount);
-                                  setTotalContributions((prev) => prev + additionalDonation);
-
-                                  // Append to mock post data
-                                  const newMockPost = {
-                                    id: 'g5_p_new_tab',
-                                    title: 'GnuBoard API 실시간 동기화 상태 검증 완료 안내',
-                                    writer: '최고관리자',
-                                    date: '2026-06-13',
-                                    views: 20,
-                                    board: 'g5_write_free',
-                                    content: 'API 동기화 프로세스를 통해 원격 데이터베이스 연결 검증이 100% 정상 완료되었습니다.'
-                                  };
-                                  setBoardPosts((prev) => {
-                                    const hasPost = prev.some(p => p.id === 'g5_p_new_tab');
-                                    if (hasPost) return prev;
-                                    return [newMockPost, ...prev];
-                                  });
-
-                                  setIsSyncingSettings(false);
-                                  setSyncSettingsResult({
-                                    success: true,
-                                    message: `외부 그누보드5 DB [${g5DbName || 'g5_db'}] 와 성공적으로 API 터널 연결을 완료하였습니다. (신규 정회원 3명 동기화 및 5,000,000원이 연합 원장의 공헌 기금에 추가 연동되었습니다!)`,
-                                    timestamp: new Date().toLocaleTimeString()
-                                  });
-
-                                  setConsoleLogs((prev) => [
-                                    ...prev,
-                                    `[API TUNNEL OK] Successfully fetched 3 G5 members: [임정열, 오현서, 최가은]`,
-                                    `[API TUNNEL OK] Sync complete: updated GnuBoard members registry.`,
-                                    `[API TUNNEL OK] Contribution ledger updated: +5,000,000원 synced into dashboard metrics.`,
-                                    `[API SUCCESS] Direct telemetry feedback completed.`
-                                  ]);
-                                }, 1205);
-                              }}
-                              disabled={isSyncingSettings}
-                              className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white rounded-xl text-xs font-black transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer font-sans"
+                                type="button"
+                                onClick={handleSyncSettings}
+                                disabled={isSyncingSettings}
+                                className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white rounded-xl text-xs font-black transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer font-sans"
                             >
-                              <RefreshCw className={`w-4 h-4 ${isSyncingSettings ? 'animate-spin' : 'animate-spin-slow'}`} />
-                              {isSyncingSettings ? '그누보드 원격 API 검증 및 데이터를 수신하는 중...' : '⚡ 그누보드 API 연동 성공 및 지표 라이브 업데이트 실행'}
+                              <RefreshCw className={`w-4 h-4 ${isSyncingSettings ? 'animate-spin' : ''}`} />
+                              {isSyncingSettings ? '그누보드 원격지 API 실제 통신 세션 분석 중...' : '⚡ 그누보드 API 실제 회선 연결 테스트 및 실시간 연동'}
                             </button>
                           </div>
                         </div>

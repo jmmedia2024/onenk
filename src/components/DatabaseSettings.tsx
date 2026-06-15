@@ -250,23 +250,39 @@ export default function DatabaseSettings({
         })
       });
       
-      const resOk = testReq.ok;
+      if (!testReq.ok) {
+        throw new Error(`HTTP_${testReq.status}`);
+      }
+      
+      const data = await testReq.json();
+      if (data.success === false) {
+        throw new Error(data.message || 'DB_CONNECTION_FAILED');
+      }
       
       setActiveCheckStep(5);
       setPreflightState('passed');
       setPreflightLogs(prev => [
         ...prev,
         `[진단 4단계 완료] MySQL/MariaDB 원장 드라이버 바인딩 성공!`,
-        `[통합 통신 자가 진단 결과: 합격] 모든 필수 체크포인트에서 정상 복제 신호가 검출되었습니다.`
+        `[통합 통신 자가 진단 결과: 합격] 모든 필수 체크포인트에서 실제 원격 연결이 성공적으로 통과되었습니다.`
       ]);
-    } catch {
-      // If endpoint is offline/sandbox (expected in dev preview), bypass gracefully and log virtual connection success
+    } catch (err: any) {
       setActiveCheckStep(5);
-      setPreflightState('passed');
+      setPreflightState('failed');
+      const errMsg = err?.message || '';
+      let detailMsg = '';
+      if (errMsg.startsWith('HTTP_')) {
+        detailMsg = `원격 API에서 비정상 응답 코드가 반환되었습니다 (HTTP ${errMsg.replace('HTTP_', '')}). API 경로 및 보안 Secret Key를 점검하십시오.`;
+      } else if (errMsg === 'DB_CONNECTION_FAILED' || (errMsg && errMsg !== 'TypeError: Failed to fetch')) {
+        detailMsg = `API 토큰 서명 대조는 성공하였으나, 원격 MySQL/MariaDB 데이터베이스 연결 세션 생성에 기각되었습니다. (${errMsg})`;
+      } else {
+        detailMsg = `브라우저 CORS 정책 차단 또는 대상 서버 네트워크 비접근 상태입니다. sync_bridge.php 최상단에 CORS 허용 헤더(header("Access-Control-Allow-Origin: *");)가 존재해야 합니다.`;
+      }
+      
       setPreflightLogs(prev => [
         ...prev,
-        `[진단 4단계 임시 우회 완료] 오프라인 샌드박스 보안 가상 데이터베이스 패싱 완료!`,
-        `[통합 통신 자가 진단 결과: 합격] 가상 연동 터널이 성공적으로 작동 중입니다.`
+        `[진단 4단계 실패] 실제 원격 연동 도달 실패!`,
+        `[통합 통신 자가 진단 결과: 불합격] ${detailMsg}`
       ]);
     }
   };
