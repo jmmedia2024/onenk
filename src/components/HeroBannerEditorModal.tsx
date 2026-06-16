@@ -429,7 +429,7 @@ export default function HeroBannerEditorModal({
               {isSavedNotify ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-white shrink-0 animate-bounce" />
-                  <span>실시간 그누보드 연계 저장 완료!</span>
+                  <span>실시간 JM 연계 저장 완료!</span>
                 </>
               ) : (
                 <>

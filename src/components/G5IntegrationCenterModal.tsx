@@ -192,13 +192,13 @@ export default function G5IntegrationCenterModal({
         setBoardList(result.data);
         setBoardFetchSuccess(true);
       } else {
-        setBoardFetchError('디비에 등록된 그누보드 게시판 테이블설정이 비어있습니다.');
+        setBoardFetchError('디비에 등록된 JM 게시판 테이블설정이 비어있습니다.');
       }
     } catch (err: any) {
       console.warn('Remote board list fetch failed, using smart fallback lists:', err);
       setIsFetchingBoards(false);
       setBoardFetchSuccess(true);
-      setBoardFetchError('🚨 [CORS/로컬안전통합 검수] 원격 API 도메인 제한으로 인해, 무결성 보존을 위해 코어 그누보드 5 공식 게시판 리스트를 사전 연동 및 복구하였습니다.');
+      setBoardFetchError('🚨 [CORS/로컬안전통합 검수] 원격 API 도메인 제한으로 인해, 무결성 보존을 위해 코어 JM 공식 게시판 리스트를 사전 연동 및 복구하였습니다.');
       
       const defaults = [
         { bo_table: 'gallery', bo_subject: '활동 갤러리 (gallery)' },
@@ -216,7 +216,7 @@ export default function G5IntegrationCenterModal({
     setDiagnosticState('checking');
     setDiagnosticDetails(null);
     setDiagnosticLogs([
-      '[진단 개시 1/5] 그누보드5 원격 동기화 상태 실시간 검인 진단망 구성 중...',
+      '[진단 개시 1/5] JM 원격 동기화 상태 실시간 검인 진단망 구성 중...',
       ` -> 검증 대상 엔드포인트 URL: ${localUrl || '설정 필요(미입력)'}`,
       ` -> 헤더 보안 식별키 규격: Bearer AUTH_TOKEN`,
       ` -> 요청 전송 방식: POST API Call (Handshake Mode)`
@@ -292,9 +292,9 @@ export default function G5IntegrationCenterModal({
           });
           setDiagnosticLogs(prev => [
             ...prev,
-            `[실패 4/5] 그누보드5 API 토큰 서명 인증은 완료했으나, 서버 측 MySQL DB 세션 생성에 기각되었습니다.`,
+            `[실패 4/5] JM API 토큰 서명 인증은 완료했으나, 서버 측 MySQL DB 세션 생성에 기각되었습니다.`,
             ` -> 에러 메시지: "${json.message || 'MySQL IP Access Blocked'}"`,
-            ' -> 조치 방안: 입력한 DB 호스트명(IP), 계정, 비밀번호가 그누보드가 설치된 로컬서버 기준으로 외부 접속(인바운드 백엔드 권한)을 개방했는지 점검해 주십시오.'
+            ' -> 조치 방안: 입력한 DB 호스트명(IP), 계정, 비밀번호가 JM이 설치된 로컬서버 기준으로 외부 접속(인바운드 백엔드 권한)을 개방했는지 점검해 주십시오.'
           ]);
         } else {
           setDiagnosticState('success');
@@ -304,13 +304,13 @@ export default function G5IntegrationCenterModal({
             cors_ok: true,
             member_count: json.member_count || 12,
             post_count: json.posts_count || 58,
-            server_version: json.version || 'GnuBoard5 Standard PHP Bridge 1.2.0'
+            server_version: json.version || 'JM Standard PHP Bridge 1.2.0'
           });
           setDiagnosticLogs(prev => [
             ...prev,
-            `[성공 / 전단 진합 합격] 사단법인 북민회 실시간 그누보드5 원격지 완벽 양방향 연동 통과!`,
+            `[성공 / 전단 진합 합격] 사단법인 북민회 실시간 JM 원격지 완벽 양방향 연동 통과!`,
             ` -> 물리적 터널 핑 레이턴시 지연율: ${latency}ms (매우 쾌적)`,
-            ` -> 원격지 그누보드 자동 로딩 회원수: ${json.member_count || 12}명 연동 상태`,
+            ` -> 원격지 JM 자동 로딩 회원수: ${json.member_count || 12}명 연동 상태`,
             ` -> 원격지 커뮤니티 데이터 연차 동기화: ${json.posts_count || 58}개 통합 완료`
           ]);
         }
@@ -429,7 +429,7 @@ exit;
 
   const phpLatestCode = `<?php
 /**
- * 그누보드5 최신글 연동을 위한 index.php 마운트 구조
+ * JM 최신글 연동을 위한 index.php 마운트 구조
  * Glassmorphic 테마에 맞춰 PHP 변수를 동적 결합 추출합니다.
  */
 include_once('./_common.php');
@@ -490,7 +490,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                 <span className="text-[9px] uppercase font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md font-sans">G5 Core Sync</span>
                 <span className="text-[10px] text-gray-400 font-semibold font-mono">v1.2.0 API Connected</span>
               </div>
-              <h4 className="font-extrabold text-[14px] text-gray-900 font-sans">그누보드5 통합 연동 관리 센터 (G5 Hub Center)</h4>
+              <h4 className="font-extrabold text-[14px] text-gray-900 font-sans">JM 통합 연동 관리 센터 (G5 Hub Center)</h4>
             </div>
           </div>
           <button
@@ -581,10 +581,10 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
               <div className="p-4 rounded-2xl border border-blue-100 bg-blue-50/20 flex gap-3 text-left">
                 <Sparkles className="w-4.5 h-4.5 text-blue-600 shrink-0 mt-0.5 animate-bounce" />
                 <div className="space-y-1">
-                  <h6 className="font-bold text-blue-900 text-xs">그누보드5 실시간 Transceiver 브릿지 원격 구성</h6>
+                  <h6 className="font-bold text-blue-900 text-xs">JM 실시간 Transceiver 브릿지 원격 구성</h6>
                   <p className="text-[10.5px] text-gray-500 leading-relaxed font-semibold">
                     이곳에 입력한 API 연동 상세 내역은 실제 독립 호스팅 서버에 업로드한 <code>sync_bridge.php</code> 파일 및 MySQL 데이터 파일과 마스터 통신 세션을 가집니다.
-                    보안을 위해 API Secret Key를 고유하게 정렬 후 원격 그누보드 파일에도 똑같이 선언해 주십시오.
+                    보안을 위해 API Secret Key를 고유하게 정렬 후 원격 JM 파일에도 똑같이 선언해 주십시오.
                   </p>
                 </div>
               </div>
@@ -624,7 +624,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                           onChange={(e) => setLocalKey(e.target.value)}
                         />
                       </div>
-                      <span className="text-[9.5px] text-gray-400 block text-left">원격 그누보드 PHP 파일 내 <code>API_SECRET_TOKEN</code> 상수와 100% 동일 정렬해야 함.</span>
+                      <span className="text-[9.5px] text-gray-400 block text-left">원격 JM PHP 파일 내 <code>API_SECRET_TOKEN</code> 상수와 100% 동일 정렬해야 함.</span>
                     </div>
                   </div>
                 </div>
@@ -682,7 +682,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                     </div>
                   </div>
                   <span className="text-[9.5px] text-gray-400 block text-left leading-relaxed">
-                    * 그누보드5 내장 함수를 우회 통신하여 가상/실제 DB 데이터를 정렬할 때 사용되는 보안 변수 테이블 규격 정보입니다.
+                    * JM 내장 함수를 우회 통신하여 가상/실제 DB 데이터를 정렬할 때 사용되는 보안 변수 테이블 규격 정보입니다.
                   </span>
                 </div>
 
@@ -691,7 +691,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
               {/* Dynamic GnuBoard Board List & Gallery Designation Setting */}
               <div className="glass-card p-5 rounded-2xl border border-gray-150 bg-white shadow-3xs space-y-4">
                 <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <div className="flex items-center gap-1.5">
+                   <div className="flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-blue-600 animate-spin" style={{ animationDuration: '3s' }} />
                     <span className="font-extrabold text-gray-900 text-[11px]">실시간 게시판 테이블 동적 연동 & 메인 갤러리 지정</span>
                   </div>
@@ -706,7 +706,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                     ) : (
                       <RefreshCw className="w-3 h-3" />
                     )}
-                    <span>그누보드 테이블 리스트 실시간 동기화</span>
+                    <span>JM 테이블 리스트 실시간 동기화</span>
                   </button>
                 </div>
 
@@ -753,7 +753,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                 {boardFetchSuccess && !boardFetchError && (
                   <div className="p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-800 text-[10px] font-bold flex items-center gap-1.5 select-none">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>원격 데이터베이스로부터 활성 그누보드 게시판 테이블 목록 {boardList.length}개를 완벽하게 인출 완료하였습니다!</span>
+                    <span>원격 데이터베이스로부터 활성 JM 게시판 테이블 목록 {boardList.length}개를 완벽하게 인출 완료하였습니다!</span>
                   </div>
                 )}
               </div>
@@ -763,7 +763,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                 <div className="space-y-0.5">
                   <div className="font-bold text-gray-800 text-[11px] flex items-center gap-1">
                     <BookmarkCheck className="w-3.5 h-3.5 text-blue-600" />
-                    <span>원격 GnuBoard 환경 동기화 정지 모킹 활성 (Auto Mock Mode)</span>
+                    <span>원격 JM 환경 동기화 정지 모킹 활성 (Auto Mock Mode)</span>
                   </div>
                   <p className="text-[10px] text-gray-400">
                     원격 서버가 오프라인이거나 CORS 브라우저 규약으로 신호 전달이 막혀도, 관리자 세션 내의 데이터는 원격지 유무와 무관하게 로컬 ERP 가상 버퍼에 완벽히 세이브 및 보완 작동합니다.
@@ -776,7 +776,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                 {saveSuccess && (
                   <span className="text-emerald-600 font-bold flex items-center gap-1 text-[11px] select-none mr-2">
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>그누보드5 통합 연동 정보가 전역적으로 영구 저장되었습니다!</span>
+                    <span>JM 통합 연동 정보가 전역적으로 영구 저장되었습니다!</span>
                   </span>
                 )}
                 <button
@@ -785,7 +785,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-3xs transition-transform hover:-translate-y-0.5 cursor-pointer flex items-center gap-1.5 active:scale-98"
                 >
                   <BookmarkCheck className="w-3.5 h-3.5" />
-                  <span>그누보드 연동 설정 저장하기</span>
+                  <span>JM 연동 설정 저장하기</span>
                 </button>
               </div>
 
@@ -823,14 +823,14 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                   </div>
                   <div className="text-left space-y-0.5">
                     <h5 className="font-extrabold text-gray-950 text-xs">
-                      {diagnosticState === 'idle' && '그누보드5 실시간 연동 성능 패키지 진단 이전 상태'}
-                      {diagnosticState === 'checking' && '원격 GnuBoard 연동망 DNS 역추적 통계 측정 중...'}
+                      {diagnosticState === 'idle' && 'JM 실시간 연동 성능 패키지 진단 이전 상태'}
+                      {diagnosticState === 'checking' && '원격 JM 연동망 DNS 역추적 통계 측정 중...'}
                       {diagnosticState === 'success' && '자가연동 합격 통과 - Connection Established!'}
                       {diagnosticState === 'failed' && '연동 진단 결과 조정 실패 - Troubleshooting Active'}
                     </h5>
                     <p className="text-[10.5px] text-gray-400">
                       {diagnosticState === 'idle' && '아래 자가 검사 단추를 클릭해 실시간 네트워크 레이턴시(Ping)를 측정하십시오.'}
-                      {diagnosticState === 'checking' && '원격 그누보드 서버와의 홉바이홉 물리적 세션 거리를 측정하는 중입니다.'}
+                      {diagnosticState === 'checking' && '원격 JM 서버와의 홉바이홉 물리적 세션 거리를 측정하는 중입니다.'}
                       {diagnosticState === 'success' && `원격 응답 핑: ${diagnosticLatency}ms | 통과 버전: ${diagnosticDetails?.server_version || '1.1.2'}`}
                       {diagnosticState === 'failed' && '패킷이 차단되었거나 외부 인바운드 DB 접근이 승인되지 않았습니다.'}
                     </p>
@@ -916,7 +916,7 @@ $free_posts = latest('theme/glass_latest', 'free', 5, 40);
                     <div className="p-3 bg-rose-100/50 border border-rose-200/50 rounded-xl space-y-2 text-rose-900 font-bold">
                       <div>💡 핵심 해결 방법 (PHP Bridge 소스 최상단에 반드시 선언) :</div>
                       <p className="text-[10px] text-gray-500 font-semibold leading-relaxed">
-                        그누보드5 서버에 업로드하신 <code className="bg-white/80 px-1 py-0.5 rounded text-rose-600 font-mono text-[9.5px]">sync_bridge.php</code> 파일의 소스코드 <span className="text-rose-700 font-black">맨 처음 줄(PHP 선언식 바로 다음 위치)</span>에 아래의 CORS 허용 구문이 포함되어 작동하는지 철저하게 교차 검인하고 수정해 주십시오.
+                        JM 서버에 업로드하신 <code className="bg-white/80 px-1 py-0.5 rounded text-rose-600 font-mono text-[9.5px]">sync_bridge.php</code> 파일의 소스코드 <span className="text-rose-700 font-black">맨 처음 줄(PHP 선언식 바로 다음 위치)</span>에 아래의 CORS 허용 구문이 포함되어 작동하는지 철저하게 교차 검인하고 수정해 주십시오.
                       </p>
                       <pre className="p-2.5 bg-slate-900 text-yellow-400 rounded-lg font-mono text-[9.5px] overflow-x-auto">
 {`<?php
@@ -961,9 +961,9 @@ header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
                     <BookOpen className="w-5 h-5 animate-pulse" />
                   </div>
                   <div>
-                    <h5 className="font-extrabold text-gray-900 text-xs">GnuBoard5 스키마 연동 및 API 가이드 바이블</h5>
+                    <h5 className="font-extrabold text-gray-900 text-xs">JM 스키마 연동 및 API 가이드 바이블</h5>
                     <p className="text-[10.5px] text-gray-400 leading-relaxed font-semibold mt-0.5">
-                      사단법인 북민회의 보안 안심 소통망 정합을 위해 그누보드 표준 디비 자그마한 구성을 기밀히 정열하는 단계별 백과사전입니다.
+                      사단법인 북민회의 보안 안심 소통망 정합을 위해 JM 표준 디비 자그마한 구성을 기밀히 정열하는 단계별 백과사전입니다.
                     </p>
                   </div>
                 </div>
@@ -1035,9 +1035,9 @@ header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
                       <div className="relative">
                         <span className="absolute -left-[31px] top-0 w-4 h-4 rounded-full bg-blue-600 border-2 border-white flex items-center justify-center text-[8px] text-white font-black shadow-3xs">1</span>
                         <div className="space-y-1">
-                          <h6 className="text-[11px] font-extrabold text-blue-900 leading-none">그누보드5 호스팅 및 브릿지 구성</h6>
+                          <h6 className="text-[11px] font-extrabold text-blue-900 leading-none">JM 호스팅 및 브릿지 구성</h6>
                           <p className="text-[10.5px] text-gray-500 leading-relaxed font-semibold">
-                            독립 도메인 그누보드 가동 디렉터리에 <code>sync_bridge.php</code> 스크립트 파일을 업로드 배치합니다. 브릿지 파일은 보안인증 토큰(Bearer Token Auth)과, MySQL DML 구수 연계를 수립하는 관문입니다.
+                            독립 도메인 JM 가동 디렉터리에 <code>sync_bridge.php</code> 스크립트 파일을 업로드 배치합니다. 브릿지 파일은 보안인증 토큰(Bearer Token Auth)과, MySQL DML 구수 연계를 수립하는 관문입니다.
                           </p>
                         </div>
                       </div>
@@ -1093,10 +1093,10 @@ header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
                   <div className="glass-card p-5 bg-white border border-gray-150 rounded-2xl shadow-3xs space-y-4">
                     <h6 className="font-extrabold text-gray-900 text-xs flex items-center gap-1.5 border-b border-gray-100 pb-2 select-none">
                       <Database className="w-4 h-4 text-blue-600 shrink-0" />
-                      그누보드5 회원 스키마 데이터 분석 (g5_member)
+                      JM 회원 스키마 데이터 분석 (g5_member)
                     </h6>
                     <p className="text-[10.5px] text-gray-500 leading-relaxed font-semibold mt-1">
-                      회원정보 및 인증 세션을 연합하기 위해 브릿지 API는 규격화된 GnuBoard5 회원 정보 테이블을 SQL 구소로 바인딩 조회하여 보안 검인을 마칩니다.
+                      회원정보 및 인증 세션을 연합하기 위해 브릿지 API는 규격화된 JM 회원 정보 테이블을 SQL 구소로 바인딩 조회하여 보안 검인을 마칩니다.
                     </p>
 
                     {/* Member Scheme Table List */}
@@ -1154,17 +1154,17 @@ header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
                       게시판 글쓰기 스키마 정밀 데이터 분석 (g5_write_free)
                     </h6>
                     <p className="text-[10.5px] text-gray-500 leading-relaxed font-semibold">
-                      그누보드는 게시판 테이블마다 개별 <code>g5_write_&#123;bo_table&#125;</code> 테이블을 신설하여 관리합니다. 실시간 글쓰기를 처리하기 위해서는 G5의 독특한 스레딩 및 정렬 규칙을 반드시 이수해야 에러 없이 정상 노출됩니다.
+                      JM은 게시판 테이블마다 개별 <code>g5_write_&#123;bo_table&#125;</code> 테이블을 신설하여 관리합니다. 실시간 글쓰기를 처리하기 위해서는 JM의 독특한 스레딩 및 정렬 규칙을 반드시 이수해야 에러 없이 정상 노출됩니다.
                     </p>
 
                     <ul className="list-decimal pl-4.5 space-y-2.5 text-[10px] text-gray-500 font-semibold leading-relaxed mt-2">
                       <li>
                         <strong className="text-gray-900 font-bold block mb-0.5">글 번호 정렬 부호 체계 (wr_num) :</strong>
-                        그누보드 원글 정렬은 <code>wr_num</code>의 <span className="text-amber-800 font-black">음수 값 절대치 기준 오름차순</span>으로 배치됩니다. API는 가장 최근 행의 `MIN(wr_num) - 1` 연산을 수립해 신규 글을 최상단에 안정 정열 배치합니다.
+                        JM 원글 정렬은 <code>wr_num</code>의 <span className="text-amber-800 font-black">음수 값 절대치 기준 오름차순</span>으로 배치됩니다. API는 가장 최근 행의 `MIN(wr_num) - 1` 연산을 수립해 신규 글을 최상단에 안정 정열 배치합니다.
                       </li>
                       <li>
                         <strong className="text-gray-900 font-bold block mb-0.5">답변 본 주소 지정 (wr_parent &amp; wr_is_comment) :</strong>
-                        질문답변이나 주 소통망의 원글 수집을 위해 원글의 경우 <code>wr_parent</code> 에 자기 자신의 Insert ID를 대수 대입하고, <code>wr_is_comment</code> 식별자를 0으로 제어 전송하는 것이 그누보드 표준 데이터 무결 방식입니다.
+                        질문답변이나 주 소통망의 원글 수집을 위해 원글의 경우 <code>wr_parent</code> 에 자기 자신의 Insert ID를 대수 대입하고, <code>wr_is_comment</code> 식별자를 0으로 제어 전송하는 것이 JM 표준 데이터 무결 방식입니다.
                       </li>
                     </ul>
                   </div>
@@ -1178,7 +1178,7 @@ header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 leading-none select-none">
                         <Terminal className="w-3.5 h-3.5 text-blue-500" />
-                        그누보드 REST API Bridge 원격 배포 소스 (sync_bridge.php)
+                        JM REST API Bridge 원격 배포 소스 (sync_bridge.php)
                       </span>
                       <button
                         onClick={() => handleCopy(phpBridgeCode, setCopiedBridge)}
@@ -1216,7 +1216,7 @@ header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
                     <div className="flex items-center justify-between animate-in fade-in">
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1 leading-none select-none">
                         <FileCode className="w-3.5 h-3.5 text-indigo-500" />
-                        그누보드 테마 PHP 최신글 연합 덤프 소스 (latest.lib.php)
+                        JM 테마 PHP 최신글 연합 덤프 소스 (latest.lib.php)
                       </span>
                       <button
                         onClick={() => handleCopy(phpLatestCode, setCopiedLatest)}
@@ -1240,7 +1240,7 @@ header("Access-Control-Allow-Methods: POST, GET, OPTIONS");`}
                       CSS 글래스모피즘 테마 최적 세팅 가이드
                     </h6>
                     <p className="text-[10px] font-semibold text-gray-500">
-                      그누보드 메인 index.php 내에서 인출 연합한 최신글들이 본 통합 홈페이지의 고급 유리질감 UI와 100% 매칭되시도록, 그누보드 테마 설치 경로 하위 <code>/skin/latest/glass_latest/latest.skin.php</code> 파일을 생성하시고, 위의 Tailwind css 마크업 루프를 식별 결합 선언하시면 아주 아름답게 등재가 이루어집니다.
+                      JM 메인 index.php 내에서 인출 연합한 최신글들이 본 통합 홈페이지의 고급 유리질감 UI와 100% 매칭되시도록, JM 테마 설치 경로 하위 <code>/skin/latest/glass_latest/latest.skin.php</code> 파일을 생성하시고, 위의 Tailwind css 마크업 루프를 식별 결합 선언하시면 아주 아름답게 등재가 이루어집니다.
                     </p>
                   </div>
                 </div>

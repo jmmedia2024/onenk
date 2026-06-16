@@ -74,7 +74,7 @@ export default function DonationSection() {
     { title: '위기 가정 무상 법률 지원 및 상담구호', pct: '40%', detail: '소송대리비, 긴급 생계 약품 보급' },
     { title: '차세대 통일 청년 특별 장학 사업', pct: '30%', detail: '고등/대학 장학생 기금 집행' },
     { title: '통일 하나눔 봉사단 빵 제조 및 나눔 비용', pct: '20%', detail: '식자재 조달, 연대 구비 배출' },
-    { title: '일반 투명 관리 통합 시스템 전산 운영비', pct: '10%', detail: '그누보드 전산 보안망, 홈페이지 서버' }
+    { title: '일반 투명 관리 통합 시스템 전산 운영비', pct: '10%', detail: 'JM 전산 보안망, 홈페이지 서버' }
   ];
 
   return (

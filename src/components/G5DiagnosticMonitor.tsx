@@ -161,10 +161,10 @@ export default function G5DiagnosticMonitor({
               <Cpu className="w-3 h-3" />
               <span>G5 LIVE SIGNAL</span>
             </div>
-            <span className="text-[10px] text-gray-400 font-bold font-mono">그누보드5 원격 양방향 브릿지 감시기</span>
+            <span className="text-[10px] text-gray-400 font-bold font-mono">JM 원격 양방향 브릿지 감시기</span>
           </div>
           <h3 className="text-lg font-black text-gray-950 font-sans flex items-center gap-2">
-            <span>그누보드5 통합 연동 상태 자가 진단기</span>
+            <span>JM 통합 연동 상태 자가 진단기</span>
             {isAutoMonitoring && (
               <span className="flex h-2 w-2 relative">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -173,7 +173,7 @@ export default function G5DiagnosticMonitor({
             )}
           </h3>
           <p className="text-[11.5px] text-gray-400 font-medium">
-            원격 그누보드 서버 내에 탑재되어 실행 중인 API 브릿지 스크립트와의 CORS 협상 가용성, 지연 시간(Latency) 및 DB 연동 안전성을 무단절 자동 모니터링합니다.
+            원격 JM 서버 내에 탑재되어 실행 중인 API 브릿지 스크립트와의 CORS 협상 가용성, 지연 시간(Latency) 및 DB 연동 안전성을 무단절 자동 모니터링합니다.
           </p>
         </div>
 

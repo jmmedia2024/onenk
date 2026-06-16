@@ -61,7 +61,7 @@ export default function DevCenter() {
             board: selectedBoard,
             count: 2,
             data: [
-              { wr_id: 1, wr_num: -1, wr_subject: `[${selectedBoard === 'notice' ? '공지사항' : selectedBoard === 'free' ? '자유소통' : '소식'}] 북민회 연합 홈페이지에 환영합니다.`, wr_content: '그누보드5 연동 스토리지 테스트 데이터 필드가 정상적으로 프론트바와 연계 가동 중입니다.', wr_name: '대표관리자', wr_datetime: '2026-06-15 10:00:00', wr_hit: 84 },
+              { wr_id: 1, wr_num: -1, wr_subject: `[${selectedBoard === 'notice' ? '공지사항' : selectedBoard === 'free' ? '자유소통' : '소식'}] 북민회 연합 홈페이지에 환영합니다.`, wr_content: 'JM 연동 스토리지 테스트 데이터 필드가 정상적으로 프론트바와 연계 가동 중입니다.', wr_name: '대표관리자', wr_datetime: '2026-06-15 10:00:00', wr_hit: 84 },
               { wr_id: 2, wr_num: -2, wr_subject: `북한이탈주민 정착 지원 사업 추진 실태 보고 (${selectedBoard})`, wr_content: '본 영역은 .env 및 fetch 엔드포인트 연동이 완료되어 실제 원격 서버와 교환 가능합니다.', wr_name: '박상혁', wr_datetime: '2026-06-14 15:30:00', wr_hit: 21 }
             ]
           };
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS \`users\` (
       title: '공지사항 및 자유게시판 스키마',
       filename: 'db_schema_boards.sql',
       language: 'sql',
-      description: '그누보드와 연동하기 쉽도록 표준 형식으로 이식한 게시판 테이블 스키마입니다.',
+      description: 'JM과 연동하기 쉽도록 표준 형식으로 이식한 게시판 테이블 스키마입니다.',
       code: `-- 2. 공지사항 및 자유게시판 테이블 (g5_write_ 또는 개별 boards 테이블)
 CREATE TABLE IF NOT EXISTS \`boards\` (
   \`id\` INT AUTO_INCREMENT PRIMARY KEY,
@@ -162,11 +162,11 @@ CREATE TABLE IF NOT EXISTS \`donations\` (
       title: 'PHP 데이터베이스 연결 모듈 (PDO)',
       filename: 'db_connect.php',
       language: 'php',
-      description: '그누보드 환경 또는 기존 PHP 웹서버에 즉시 적용할 수 있도록 암호화 연결을 지원하는 핵심 PDO 라이브러리입니다.',
+      description: 'JM 환경 또는 기존 PHP 웹서버에 즉시 적용할 수 있도록 암호화 연결을 지원하는 핵심 PDO 라이브러리입니다.',
       code: `<?php
 /**
  * PHP-MySQL PDO 데이터베이스 커넥터 
- * 그누보드5 연동 시 dbconfig.php 설정 파일과 병행 구성이 가능합니다.
+ * JM 연동 시 dbconfig.php 설정 파일과 병행 구성이 가능합니다.
  */
 
 define('DB_HOST', 'localhost');
@@ -194,18 +194,18 @@ try {
 ?>`
     },
     {
-      title: '그누보드 게시판 연동 코드 조각',
+      title: 'JM 게시판 연동 코드 조각',
       filename: 'gnuboard_bridge.php',
       language: 'php',
-      description: '그누보드5(g5_write) 테이블에 인서트하여 메인 게시판 UI로 전달해 주는 핵심 훅/API 엔드포인트 예제입니다.',
+      description: 'JM(g5_write) 테이블에 인서트하여 메인 게시판 UI로 전달해 주는 핵심 훅/API 엔드포인트 예제입니다.',
       code: `<?php
-// 그누보드5 세션 및 기본 로드 설정
+// JM 세션 및 기본 로드 설정
 include_once('./_common.php');
 
 if (!defined('_GNUBOARD_')) exit; // 개별 호출 방지
 
 /**
- * 북한이탈주민중앙회 메인 서버에서 그누보드 게시판의 
+ * 북한이탈주민중앙회 메인 서버에서 JM 게시판의 
  * 최신 5개 글을 JSON 형태로 추출하여 프론트엔드와 API 통신을 수행합니다.
  */
 header('Content-Type: application/json; charset=UTF-8');
@@ -255,7 +255,7 @@ echo json_encode($posts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             PHP &amp; MySQL 데이터베이스 아키텍처
           </h2>
           <p className="text-gray-600 text-sm mt-1">
-            그누보드5(GnuBoard) 및 표준 PHP 프레임워크와 즉시 연동되도록 조율된 고기능 백엔드 스키마 및 소스코드입니다.
+            JM 및 표준 PHP 프레임워크와 즉시 연동되도록 조율된 고기능 백엔드 스키마 및 소스코드입니다.
           </p>
         </div>
         <div className="flex gap-2 text-xs font-mono bg-gray-50 border border-gray-100 px-4 py-2 rounded-lg text-gray-500">
@@ -297,8 +297,8 @@ echo json_encode($posts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
               <HelpCircle className="w-3.5 h-3.5 text-gray-500" /> 이식 안내 가이드
             </span>
             <p className="text-[11px] text-gray-500 leading-relaxed">
-              본 스키마와 브리지는 그누보드 5.4+ 버전과 완전 호환됩니다. 
-              그누보드 설치 DB 경로인 <code className="bg-gray-200 px-1 rounded">dbconfig.php</code> 정보로 PDO 인증 정보를 업데이트한 다음 탑재하십시오.
+              본 스키마와 브리지는 JM 버전과 완전 호환됩니다. 
+              JM 설치 DB 경로인 <code className="bg-gray-200 px-1 rounded">dbconfig.php</code> 정보로 PDO 인증 정보를 업데이트한 다음 탑재하십시오.
             </p>
           </div>
         </div>
@@ -349,14 +349,14 @@ echo json_encode($posts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
       <div className="border-t border-gray-150 pt-8" id="g5-live-api-gateway">
         <div className="flex items-center gap-2 mb-4 text-left">
           <Globe className="w-5 h-5 text-indigo-600 animate-pulse" />
-          <h3 className="text-lg font-bold text-gray-950">그누보드5 라이브 API 데이터 게이트웨이</h3>
+          <h3 className="text-lg font-bold text-gray-950">JM 라이브 API 데이터 게이트웨이</h3>
           <span className="text-[10px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200">
             dotenv 연계 완료
           </span>
         </div>
 
         <p className="text-xs text-gray-600 mb-6 leading-relaxed text-left">
-          본 패널은 <code className="bg-slate-100 px-1 py-0.5 rounded text-red-600 font-mono text-[11px]">.env</code> 파일의 <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-600 font-mono text-[11px]">VITE_GNUBOARD_API_URL</code> 설정을 감지하여 실제 활성화된 그누보드5 원격 Sync Bridge와 실시간으로 통신합니다. 이식 전 데이터를 검침하고 무결성을 테스팅해 보십시오.
+          본 패널은 <code className="bg-slate-100 px-1 py-0.5 rounded text-red-600 font-mono text-[11px]">.env</code> 파일의 <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-600 font-mono text-[11px]">VITE_GNUBOARD_API_URL</code> 설정을 감지하여 실제 활성화된 JM 원격 Sync Bridge와 실시간으로 통신합니다. 이식 전 데이터를 검침하고 무결성을 테스팅해 보십시오.
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -502,7 +502,7 @@ echo json_encode($posts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                   <Database className="w-10 h-10 text-zinc-800 mb-2" />
                   <p className="text-xs font-extrabold text-zinc-400">송수신 대행 대기 상태 (Standby)</p>
                   <p className="text-[10px] text-zinc-500 mt-1 max-w-xs leading-relaxed">
-                    왼쪽 패널의 API 설정을 지정하고, 하단의 [실시간 Fetch 전송] 버튼을 눌러 그누보드 회원 혹은 게시판 연동 전산망의 응답 스트림을 확인하십시오.
+                    왼쪽 패널의 API 설정을 지정하고, 하단의 [실시간 Fetch 전송] 버튼을 눌러 JM 회원 혹은 게시판 연동 전산망의 응답 스트림을 확인하십시오.
                   </p>
                 </div>
               ) : null}
@@ -514,7 +514,7 @@ echo json_encode($posts, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
                 <div>
                   <strong>데이터 검침 통계 정상 (200 OK):</strong>
                   <p className="text-[10px] text-gray-500 leading-normal mt-0.5">
-                    GnuBoard5 스토리지로부터 JSON 형태 데이터 스트림이 에러 없이 무결 수립되었습니다. 실 상용 이식 시 이 데이터를 가공하여 메인 뉴스 섹션 및 회원 데이터베이스에 바인딩 처리합니다.
+                    JM 스토리지로부터 JSON 형태 데이터 스트림이 에러 없이 무결 수립되었습니다. 실 상용 이식 시 이 데이터를 가공하여 메인 뉴스 섹션 및 회원 데이터베이스에 바인딩 처리합니다.
                   </p>
                 </div>
               </div>

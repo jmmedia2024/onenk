@@ -237,7 +237,7 @@ export default function GnuBoardLiveDashboard({
     } catch (err: any) {
       setIsLoading(false);
       const errMsg = err.message || 'CORS 차단 또는 네트워크 연결 지연 타임아웃 발생';
-      addLog('error', `API 연동 통신 과정 에러 발생`, `상세 사유: ${errMsg}\n\n[도움말] 브라우저 보안 규정(CORS)으로 인해, React 웹상에서 그누보드 서버 도메인 주소로 직접 AJAX 전송 시 차단될 수 있습니다. 그누보드 서버의 PHP 브릿지 상단에 Access-Control-Allow-Origin 헤더가 누락되지 않았는지 점검하거나 본 시스템의 'Virtual Sandbox 샌드박스 시뮬레이터' 모드를 사용해 보십시오.`);
+      addLog('error', `API 연동 통신 과정 에러 발생`, `상세 사유: ${errMsg}\n\n[도움말] 브라우저 보안 규정(CORS)으로 인해, React 웹상에서 JM 서버 도메인 주소로 직접 AJAX 전송 시 차단될 수 있습니다. JM 서버의 PHP 브릿지 상단에 Access-Control-Allow-Origin 헤더가 누락되지 않았는지 점검하거나 본 시스템의 'Virtual Sandbox 샌드박스 시뮬레이터' 모드를 사용해 보십시오.`);
       showFeedback('error', `연동 실패: ${errMsg}`);
       throw err;
     }
@@ -275,7 +275,7 @@ export default function GnuBoardLiveDashboard({
         setPosts(simulatedPosts); // fallback
       }
 
-      showFeedback('success', `성공: 원격 그누보드5 DB로부터 회원 원장 및 알림판 레코드를 실시간 연하 조율 인출 완료하였습니다!`);
+      showFeedback('success', `성공: 원격 JM5 DB로부터 회원 원장 및 알림판 레코드를 실시간 연하 조율 인출 완료하였습니다!`);
     } catch (e: any) {
       // In case of any live fetch network blocks, fallback gracefully to pre-seeded dataset
       setMembers(simulatedMembers);
@@ -323,7 +323,7 @@ export default function GnuBoardLiveDashboard({
   // Load baseline on mount
   useEffect(() => {
     handleReloadDashboard();
-    addLog('info', `그누보드5 실시간 모니터링 원격 관리 패널 초기 부팅 완료. 대상 호스트: ${g5DbHost || 'localhost'}`);
+    addLog('info', `JM5 실시간 모니터링 원격 관리 패널 초기 부팅 완료. 대상 호스트: ${g5DbHost || 'localhost'}`);
   }, [g5DbHost, g5DbName]);
 
   // Filter members list by search query with pagination
@@ -388,7 +388,7 @@ export default function GnuBoardLiveDashboard({
             <span className={`w-2 h-2 rounded-full ${isLiveMode ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'}`}></span>
             <span className="text-[10px] font-black uppercase tracking-widest text-[#2c3e50] font-sans">Remote MySQL API Core Module</span>
           </div>
-          <h2 className="text-xl font-black text-gray-950 font-sans tracking-tight">그누보드5 실시간 연동 원격 모니터링 제어실</h2>
+          <h2 className="text-xl font-black text-gray-950 font-sans tracking-tight">JM5 실시간 연동 원격 모니터링 제어실</h2>
           <p className="text-[11.5px] text-gray-500 font-medium max-w-2xl leading-relaxed">
             사단법인 북민회 홈페이지의 원격 MariaDB/MySQL과 보안 PHP 동기화 브릿지 (<code className="bg-slate-100 font-mono text-indigo-600 px-1 py-0.5 rounded text-[11px]">g5_sync_bridge.php</code>)
             를 거쳐, 회원 정보 연합 대조, 공지판 글 데이터, 사이트 사용 실적 통계를 실시간으로 집계하고 정회원 등급 통수를 즉각 통제하는 안전 관리실입니다.
@@ -425,7 +425,7 @@ export default function GnuBoardLiveDashboard({
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-[9.5px] text-gray-400 font-black tracking-widest uppercase">그누보드 누적 회원</span>
+            <span className="text-[9.5px] text-gray-400 font-black tracking-widest uppercase">JM 누적 회원</span>
             <h3 className="text-xl font-black text-gray-950 font-mono mt-0.5">
               {isLoading ? '...' : (analytics.totalMembers).toLocaleString()}명
             </h3>
@@ -538,7 +538,7 @@ export default function GnuBoardLiveDashboard({
               {displayedMembers.length === 0 ? (
                 <div className="p-10 text-center text-gray-450 text-xs font-bold space-y-2">
                   <Users className="w-8 h-8 text-gray-300 mx-auto" />
-                  <p>일치하는 그누보드5 가입 회원을 찾을 수 없습니다.</p>
+                  <p>일치하는 JM5 가입 회원을 찾을 수 없습니다.</p>
                 </div>
               ) : (
                 <table className="w-full text-left font-sans text-xs">
@@ -639,7 +639,7 @@ export default function GnuBoardLiveDashboard({
             {/* Promote guidelines */}
             <div className="p-3.5 bg-yellow-50/50 border border-yellow-150 rounded-2xl text-[10.5px] leading-relaxed text-yellow-950 font-medium">
               💡 <strong>탈북이주민 실명 및 정회원 레벨 상향(Promote Level) 보안 프로세스</strong><br />
-              지정된 정착지원 확인서류 심사가 승인 처리되면, 연합 브릿지가 그누보드 회원 테이블(<code className="font-mono text-gray-700">g5_member</code>)의 해당 계정 <code className="font-mono text-red-600 bg-white/60 px-0.5 rounded">mb_level</code>을 1(일반회원)에서 2(정회원 권한)로 즉각 자동 수정보완시켜 회원간 자립소통 전용 공간에 등단할 수 있도록 인가 처리합니다.
+              지정된 정착지원 확인서류 심사가 승인 처리되면, 연합 브릿지가 JM 회원 테이블 (<code className="font-mono text-gray-700">g5_member</code>)의 해당 계정 <code className="font-mono text-red-600 bg-white/60 px-0.5 rounded">mb_level</code>을 1(일반회원)에서 2(정회원 권한)로 즉각 자동 수정보완시켜 회원간 자립소통 전용 공간에 등단할 수 있도록 인가 처리합니다.
             </div>
           </div>
         </div>
@@ -712,7 +712,7 @@ export default function GnuBoardLiveDashboard({
               <div>
                 <strong>🔐 통합 API 인증 규격 준수 필독 안내</strong>
                 <p className="text-[10px] text-gray-500 font-medium leading-normal mt-0.5">
-                  본 통합 시스템과 그누보드 브릿지 파사드 간의 API 인증은 HTTP 헤더인 <code className="bg-slate-200 text-red-600 px-1 rounded text-[9.5px]">Authorization: Bearer <span className="font-bold">{g5ApiKey}</span></code>
+                  본 통합 시스템과 JM 브릿지 파사드 간의 API 인증은 HTTP 헤더인 <code className="bg-slate-200 text-red-600 px-1 rounded text-[9.5px]">Authorization: Bearer <span className="font-bold">{g5ApiKey}</span></code>
                   를 통해 완벽 정밀 자격 대조 후 처리됩니다. 불일치한 승인 인자는 브릿지상에서 강제로 401 Unauthorized 에러 파기 조치됩니다.
                 </p>
               </div>

@@ -92,7 +92,7 @@ const VIRTUAL_G5_POSTS = Array.from({ length: 48 }, (_, i) => {
     wr_id: i + 1,
     wr_num: -(i + 1),
     wr_subject: `[${i % 2 === 0 ? '공지사항' : '자유게시판'}] ${subjects[i % subjects.length]} (가용 회차 #${i + 1})`,
-    wr_content: '그누보드5 연동 스토리지 테스트 데이터 필드가 정상적으로 프론트바와 연계 가동 중입니다. 페징 덤프 쿼리가 올바르게 처리되고 있는지 응답 상태를 확인하십시오.',
+    wr_content: 'JM 연동 스토리지 테스트 데이터 필드가 정상적으로 프론트바와 연계 가동 중입니다. 페징 덤프 쿼리가 올바르게 처리되고 있는지 응답 상태를 확인하십시오.',
     wr_name: writers[i % writers.length],
     wr_datetime: `2026-06-${(1 + i % 14).toString().padStart(2, '0')} 12:45:10`,
     wr_hit: 12 + (i * 9) % 350
@@ -424,7 +424,7 @@ export default function G5ApiMonitorDashboard({
           </div>
           <h4 className="text-sm font-black text-gray-950 flex items-center gap-1.5">
             <Radio className="w-4 h-4 text-blue-500" />
-            <span>그누보드5 실시간 API 모니터링 &amp; 페이징 대시보드</span>
+            <span>JM 실시간 API 모니터링 &amp; 페이징 대시보드</span>
           </h4>
           <p className="text-[11px] text-gray-400 font-medium">
             원격 PHP 스크립트와의 실시간 HTTP 응답 수배 및 데이터 페이징(Offset, Limit, Total) 정밀도를 시뮬레이션 감시합니다.

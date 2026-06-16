@@ -97,7 +97,7 @@ export default function NewsSection() {
             date: p.date,
             description: p.content,
             views: p.views || 0,
-            tags: p.tags || ['그누보드', '실시간연계'],
+            tags: p.tags || ['JM', '실시간연계'],
             imagePlaceholderColor: p.imagePlaceholderColor || (p.type === 'press' || p.type === 'news' ? 'from-amber-400 to-rose-500' : 'from-blue-400 to-indigo-600')
           }));
 
@@ -129,7 +129,7 @@ export default function NewsSection() {
               date: p.date,
               description: p.content,
               views: p.views || 0,
-              tags: p.tags || ['그누보드', '실시간연계'],
+              tags: p.tags || ['JM', '실시간연계'],
               imagePlaceholderColor: p.imagePlaceholderColor || (p.type === 'press' || p.type === 'news' ? 'from-amber-400 to-rose-500' : 'from-blue-400 to-indigo-600')
             }));
           const uniqueTitles = new Set(dynamicItems.map(item => item.title));
@@ -197,7 +197,7 @@ export default function NewsSection() {
               date: p.wr_datetime ? p.wr_datetime.substring(0, 10) : '2026-06-14',
               description: p.wr_content,
               views: parseInt(p.wr_hit) || 0,
-              tags: ['그누보드', 'news'],
+              tags: ['JM', 'news'],
               imagePlaceholderColor: 'from-amber-400 to-rose-500'
             }));
             fetchedItems = [...fetchedItems, ...mappedNews];
@@ -214,7 +214,7 @@ export default function NewsSection() {
               date: p.wr_datetime ? p.wr_datetime.substring(0, 10) : '2026-06-14',
               description: p.wr_content,
               views: parseInt(p.wr_hit) || 0,
-              tags: ['그누보드', 'gallery'],
+              tags: ['JM', 'gallery'],
               imagePlaceholderColor: 'from-emerald-400 to-teal-600'
             }));
             fetchedItems = [...fetchedItems, ...mappedGallery];

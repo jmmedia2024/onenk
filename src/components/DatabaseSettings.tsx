@@ -228,7 +228,7 @@ export default function DatabaseSettings({
     setPreflightLogs(prev => [
       ...prev,
       `[진단 3단계 완료] API Security Token 인증 수립 성공!`,
-      `[진단 4단계] 그누보드5 DB 커넥터 드라이버 마운트 & 스키마 쿼리 응용 체크 중...`
+      `[진단 4단계] JM DB 커넥터 드라이버 마운트 & 스키마 쿼리 응용 체크 중...`
     ]);
 
     // Step 4: DB Driver session query simulation
@@ -330,7 +330,7 @@ export default function DatabaseSettings({
             </p>
           )}
           <p className="text-[9.5px] text-gray-400 mt-1 leading-relaxed">
-            실제 연동을 위해 작성된 PHP 파일을 그누보드 루트 폴더에 업로드한 뒤 그 URL 경로를 입력하십시오.
+            실제 연동을 위해 작성된 PHP 파일을 JM 루트 폴더에 업로드한 뒤 그 URL 경로를 입력하십시오.
           </p>
         </div>
 
@@ -358,7 +358,7 @@ export default function DatabaseSettings({
         <div className="text-[11px] font-extrabold text-gray-950 flex items-center justify-between gap-1">
           <div className="flex items-center gap-1.5">
             <Sliders className="w-3.5 h-3.5 text-blue-600" />
-            <span>그누보드 외부 데이터베이스 자격 증명 (Database Credentials)</span>
+            <span>JM 외부 데이터베이스 자격 증명 (Database Credentials)</span>
           </div>
           {allInputsValid ? (
             <span className="text-[9px] bg-blue-50 text-blue-700 font-extrabold px-1.5 py-0.5 rounded-md border border-blue-150">검증 가능</span>
@@ -549,7 +549,7 @@ export default function DatabaseSettings({
         >
           <div className="font-extrabold flex items-center gap-1.5 small-caps mb-1">
             <span className={`w-1.5 h-1.5 rounded-full ${syncSettingsResult.success ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`}></span>
-            <span>{syncSettingsResult.success ? '그누보드 양방향 마이그레이션 및 동기화 무결성 확보' : '동기화 통신 오류'}</span>
+            <span>{syncSettingsResult.success ? 'JM 양방향 마이그레이션 및 동기화 무결성 확보' : '동기화 통신 오류'}</span>
             <span className="text-[10px] text-gray-400 font-mono font-normal">({syncSettingsResult.timestamp})</span>
           </div>
           <p className="text-[10px] leading-relaxed text-slate-600 mt-1">{syncSettingsResult.message}</p>

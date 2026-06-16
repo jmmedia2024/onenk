@@ -195,7 +195,7 @@ export default function AdminSection({
     setDiagnosticState('checking');
     setDiagnosticDetails(null);
     setDiagnosticLogs([
-      '[진단 개시 1/4] 그누보드5 원격 동기화 상태 실시간 위성 진단망 구성 중...',
+      '[진단 개시 1/4] JM5 원격 동기화 상태 실시간 위성 진단망 구성 중...',
       ` -> 검증 대상 엔드포인트 URL: ${g5ApiUrl || '설정 필요(미입력)'}`,
       ` -> 요청 전송 방식: POST API Call (Handshake Mode)`
     ]);
@@ -272,9 +272,9 @@ export default function AdminSection({
           });
           setDiagnosticLogs(prev => [
             ...prev,
-            `[실패 4/4] 그누보드5 API 토큰 서명 대조는 성공했으나, 원격 MySQL 데이터베이스 세션 연결에 실패했습니다.`,
+            `[실패 4/4] JM5 API 토큰 서명 대조는 성공했으나, 원격 MySQL 데이터베이스 세션 연결에 실패했습니다.`,
             ` -> 원인 로그: "${json.message || 'MySQL Connection Mismatched'}"`,
-            ' -> 조치 방안: 기재하신 DB 호스트명, 사용자 계정, 접속 암호가 독립 그누보드 호스트 기준 외부 DB 인바운드 접근을 막고 있는 환경인지 확인한 후 보안 호정 처리를 실행해 주십시오.'
+            ' -> 조치 방안: 기재하신 DB 호스트명, 사용자 계정, 접속 암호가 독립 JM 호스트 기준 외부 DB 인바운드 접근을 막고 있는 환경인지 확인한 후 보안 호정 처리를 실행해 주십시오.'
           ]);
         } else {
           setDiagnosticState('success');
@@ -284,11 +284,11 @@ export default function AdminSection({
             cors_ok: true,
             member_count: json.member_count || gnuMembers.length,
             post_count: json.posts_count || boardPosts.length,
-            server_version: json.version || 'GnuBoard5 Standard PHP Bridge 1.2.0'
+            server_version: json.version || 'JM5 Standard PHP Bridge 1.2.0'
           });
           setDiagnosticLogs(prev => [
             ...prev,
-            `[실패 0건 / 진단 합격] 사단법인 북민회 실시간 그누보드5 원격지 연동 동기화 연결 테스트 통과!`,
+            `[실패 0건 / 진단 합격] 사단법인 북민회 실시간 JM5 원격지 연동 동기화 연결 테스트 통과!`,
             ` -> 원격지 응답 Latency 지연율 (Ping): ${latency}ms (매우 쾌적)`,
             ` -> 원격지 로드된 누적 가입 회원수: ${json.member_count || gnuMembers.length}명 연동 완료`,
             ` -> 로드된 누적 커뮤니티 게시물수: ${json.posts_count || boardPosts.length}개 유치 성공`
@@ -298,7 +298,7 @@ export default function AdminSection({
         setDiagnosticState('failed');
         setDiagnosticLogs(prev => [
           ...prev,
-          `[실패 4/4] 원격 API 서버 측에서 비정상 응답 헤더 코드가 반환되었습니다 (HTTP ${res.status}).`,
+          `[실패 4/4] 원격 API 서버 측에서 비정상 응답 헤절 코드가 반환되었습니다 (HTTP ${res.status}).`,
           res.status === 401 || res.status === 403 
             ? ' -> 원인 디렉토리: 연동 보안키 검증 실패. 북민회 행정 패널의 통합 보안 Secret Key와 원격 PHP 파일 내 $API_SECRET_TOKEN 변수의 비밀키 코드가 정렬되는지 점검하십시오.'
             : ' -> 원인 디렉토리: PHP 통신 브릿지 스크립트 도메인이나 경로명 철자가 맞는지 확인하십시오. (치명적 오류 및 500 Internals 에러 확인 권장)'
@@ -314,7 +314,7 @@ export default function AdminSection({
         setDiagnosticLogs(prev => [
           ...prev,
           '[실패 4/4 - 시간 초과] 원격 웹 세션 응답 만료 시간(6.0초)이 초과되어 연동 검사가 기각되었습니다.',
-          ' -> 원격 그누보드 호스팅 네트워크 대역폭 부족 또는 방화벽 포트 접근 불가 원인 점검 필요.'
+          ' -> 원격 JM 호스팅 네트워크 대역폭 부족 또는 방화벽 포트 접근 불가 원인 점검 필요.'
         ]);
       } else if (err.message === 'JSON_PARSE_ERROR') {
         setDiagnosticLogs(prev => [
@@ -478,7 +478,7 @@ export default function AdminSection({
 
     // 1. g5_member
     sql += `-- ---------------------------------------------------------\n`;
-    sql += `-- 테이블 스키마: g5_member (그누보드 회신 데이터 원장 - 보존형 수립)\n`;
+    sql += `-- 테이블 스키마: g5_member (JM 회신 데이터 원장 - 보존형 수립)\n`;
     sql += `-- ---------------------------------------------------------\n`;
     sql += `CREATE TABLE IF NOT EXISTS \`g5_member\` (\n`;
     sql += `  \`mb_no\` int(11) NOT NULL AUTO_INCREMENT,\n`;
@@ -631,7 +631,7 @@ export default function AdminSection({
 
     setConsoleLogs((prev) => [
       ...prev,
-      `[API BRIDGE] Initiating dynamic connection attempt to GnuBoard API...`,
+      `[API BRIDGE] Initiating dynamic connection attempt to JM API...`,
       ` -> Target EP: ${g5ApiUrl}`,
       ` -> DB Host: ${g5DbHost}`,
       ` -> DB Target: ${g5DbName}`
@@ -660,12 +660,12 @@ export default function AdminSection({
         }
         setSyncSettingsResult({
           success: true,
-          message: data.message || `외부 그누보드5 DB [${g5DbName}](${g5DbHost})에 API Bridge 터널을 통해 성공적으로 실제 연동되었습니다.`,
+          message: data.message || `외부 JM DB [${g5DbName}](${g5DbHost})에 API Bridge 터널을 통해 성공적으로 실제 연동되었습니다.`,
           timestamp: new Date().toLocaleTimeString()
         });
         setConsoleLogs((prev) => [
           ...prev,
-          `[API SUCCESS] Direct response received successfully! Connected state persisted to GnuBoard.`
+          `[API SUCCESS] Direct response received successfully! Connected state persisted to JM.`
         ]);
         setIsSyncingSettings(false);
       } else {
@@ -676,12 +676,12 @@ export default function AdminSection({
       setIsSyncingSettings(false);
       setSyncSettingsResult({
         success: false,
-        message: `실제 연동 오류: GnuBoard 외부 DB [${g5DbName}](${g5DbHost})에 연결을 완벽히 안착시키지 못했습니다.\n(원인: ${err.message || 'CORS 통신 거부 또는 네트워크 대상 오프라인 상태'})`,
+        message: `실제 연동 오류: JM 외부 DB [${g5DbName}](${g5DbHost})에 연결을 완벽히 안착시키지 못했습니다.\n(원인: ${err.message || 'CORS 통신 거부 또는 네트워크 대상 오프라인 상태'})`,
         timestamp: new Date().toLocaleTimeString()
       });
       setConsoleLogs((prev) => [
         ...prev,
-        `[API FAILURE] GnuBoard Database connection error! (Detail: ${err.message})`,
+        `[API FAILURE] JM Database connection error! (Detail: ${err.message})`,
         ` -> Please check your CORS headers, database credentials, or server firewall configuration.`
       ]);
     }
@@ -692,11 +692,11 @@ export default function AdminSection({
 
   const fetchGnuMembersFromApi = async () => {
     if (!g5ApiUrl) {
-      alert("그누보드 API 브릿지 URL이 설정되지 않았습니다.\n'G5 스키마/API 연동 설정' 이나 '그누보드 API 연동' 메뉴에서 API 주소 경로를 확인하십시오.");
+      alert("JM API 브릿지 URL이 설정되지 않았습니다.\n'G5 스키마/API 연동 설정' 이나 'JM API 연동' 메뉴에서 API 주소 경로를 확인하십시오.");
       return;
     }
     setIsSyncingGnuMembers(true);
-    setConsoleLogs(prev => [...prev, `[GnuBoard API] 회원 조회 API 릴레이 요청 중: ${g5ApiUrl}`]);
+    setConsoleLogs(prev => [...prev, `[JM API] 회원 조회 API 릴레이 요청 중: ${g5ApiUrl}`]);
     try {
       const response = await safeG5Fetch(g5ApiUrl, {
         method: 'POST',
@@ -732,15 +732,15 @@ export default function AdminSection({
 
         setGnuMembers(mapped);
         localStorage.setItem('bukmin_g5_members_v1', JSON.stringify(mapped));
-        setConsoleLogs(prev => [...prev, `[GnuBoard API SUCCESS] ${mapped.length}명의 회원을 원격지에서 정상 로드하여 React 캐시를 대치했습니다.`]);
-        alert(`🎉 그누보드 회원 동기화 성공!\n실제 GnuBoard 데이터베이스에서 총 ${mapped.length}명의 실제 가입 회원 목록을 실시간으로 가져왔습니다.`);
+        setConsoleLogs(prev => [...prev, `[JM API SUCCESS] ${mapped.length}명의 회원을 원격지에서 정상 로드하여 React 캐시를 대치했습니다.`]);
+        alert(`🎉 JM 회원 동기화 성공!\n실제 JM 데이터베이스에서 총 ${mapped.length}명의 실제 가입 회원 목록을 실시간으로 가져왔습니다.`);
       } else {
         throw new Error(data.message || 'API 응답 상태가 올바르지 않습니다.');
       }
     } catch (err: any) {
       console.error(err);
       setConsoleLogs(prev => [...prev, `[API Pull Error] GnuBoard 회원 동기화 수신 기각: ${err.message}`]);
-      alert(`❌ 그누보드 회원 데이터 수신 실패\n사유: ${err.message || 'CORS 통신 허용 누락 또는 도메인 오프라인'}\n\n[G5 스키마/API 연동 설정] 탭에 있는 g5_sync_bridge.php 원본 소스코드를 그누보드 루트 폴더에 올바르게 배치하고 API Bearer 보안 토큰 키가 완전히 매칭되는지 확인하십시오.`);
+      alert(`❌ JM 회원 데이터 수신 실패\n사유: ${err.message || 'CORS 통신 허용 누락 또는 도메인 오프라인'}\n\n[G5 스키마/API 연동 설정] 탭에 있는 g5_sync_bridge.php 원본 소스코드를 JM 루트 폴더에 올바르게 배치하고 API Bearer 보안 토큰 키가 완전히 매칭되는지 확인하십시오.`);
     } finally {
       setIsSyncingGnuMembers(false);
     }
@@ -748,7 +748,7 @@ export default function AdminSection({
 
   const fetchGnuPostsFromApi = async (boTable: string) => {
     if (!g5ApiUrl) {
-      alert("그누보드 API 브릿지 URL이 설정되지 않았습니다.\n'G5 스키마/API 연동 설정' 에서 주소를 설정해 주십시오.");
+      alert("JM API 브릿지 URL이 설정되지 않았습니다.\n'G5 스키마/API 연동 설정' 에서 주소를 설정해 주십시오.");
       return;
     }
     setIsSyncingGnuPosts(true);
@@ -782,7 +782,7 @@ export default function AdminSection({
           type: boTable,
           title: p.wr_subject,
           content: p.wr_content,
-          author: p.wr_name || '그누보드회원',
+          author: p.wr_name || 'JM회원',
           date: p.wr_datetime ? p.wr_datetime.substring(0, 10) : new Date().toISOString().split('T')[0],
           views: parseInt(p.wr_hit) || 0,
           likes: 0,
@@ -794,7 +794,7 @@ export default function AdminSection({
         
         syncPostsToStorage(merged);
         setConsoleLogs(prev => [...prev, `[GnuBoard API SUCCESS] g5_write_${boTable} 테이블에서 ${fetchedPosts.length}개의 게시글 동기화 완료`]);
-        alert(`🎉 [${boTable === 'free' ? '자유게시판' : boTable === 'notice' ? '공지사항' : boTable === 'news' ? '보도자료' : boTable === 'qna' ? '민원기록' : boTable === 'private' ? '비공개전산' : '갤러리'}] 실시간 동기화 완료!\n실제 GnuBoard MySQL 원장에서 ${fetchedPosts.length}개의 최신 글을 성실히 로드하여 백사이드에 전사하였습니다.`);
+        alert(`🎉 [${boTable === 'free' ? '자유게시판' : boTable === 'notice' ? '공지사항' : boTable === 'news' ? '보도자료' : boTable === 'qna' ? '민원기록' : boTable === 'private' ? '비공개전산' : '갤러리'}] 실시간 동기화 완료!\n실제 JM MySQL 원장에서 ${fetchedPosts.length}개의 최신 글을 성실히 로드하여 백사이드에 전사하였습니다.`);
       } else {
         throw new Error(data.message || 'API 상태 응답 불합격');
       }
@@ -830,11 +830,11 @@ export default function AdminSection({
       if (response.ok) {
         const data = await response.json();
         if (data.status === 'success') {
-          setConsoleLogs(prev => [...prev, `[GnuBoard API Level Up] 원격지 그누보드 회원 [${mb_id}]의 등급을 레벨 ${targetLevel}로 실제 승급 동기화 완료!`]);
+          setConsoleLogs(prev => [...prev, `[GnuBoard API Level Up] 원격지 JM 회원 [${mb_id}]의 등급을 레벨 ${targetLevel}로 실제 승급 동기화 완료!`]);
         }
       }
     } catch (err: any) {
-      console.warn("Could not promote member in remote GnuBoard directly:", err);
+      console.warn("Could not promote member in remote JM directly:", err);
     }
   };
 
@@ -1246,7 +1246,7 @@ export default function AdminSection({
       {/* Title block */}
       <div className="border-l-4 border-blue-600 pl-4 mb-8 text-left">
         <div className="text-[10px] uppercase font-extrabold text-blue-600 tracking-wider">Administration Service</div>
-        <h2 className="text-xl font-bold text-gray-950 font-sans tracking-tight">북민회 그누보드 통합 관리 시스템</h2>
+        <h2 className="text-xl font-bold text-gray-950 font-sans tracking-tight">북민회 JM 통합 관리 시스템</h2>
         <p className="text-xs text-gray-400 font-semibold mt-0.5">회원 3만 4천 통일기수 자조회의 실시간 정착 심사, 후원금 원장 관리 및 국회 연계 데이터베이스 행정을 총괄합니다.</p>
       </div>
 
@@ -1405,7 +1405,7 @@ export default function AdminSection({
                   activeAdminSubTab === 'g5_members' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-50 text-gray-600 hover:bg-slate-100 border border-gray-200'
                 }`}
               >
-                👥 그누보드 회원관리
+                👥 JM 회원관리
               </button>
               <button
                 onClick={() => setActiveAdminSubTab('g5_boards')}
@@ -1421,7 +1421,7 @@ export default function AdminSection({
                   activeAdminSubTab === 'g5_bridge' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-50 text-gray-600 hover:bg-slate-100 border border-gray-200'
                 }`}
               >
-                🔌 그누보드 API 연동
+                🔌 JM API 연동
               </button>
               <button
                 onClick={() => setActiveAdminSubTab('g5_schema_config')}
@@ -1728,7 +1728,7 @@ export default function AdminSection({
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-100 pb-4 gap-2">
                   <div>
                     <h4 className="text-sm font-extrabold text-gray-950 font-sans">통합 전산망 보안 필터 제어 센터</h4>
-                    <p className="text-[11px] text-gray-400 mt-0.5">그누보드5 프레임워크와의 양방향 원격 DB 및 동기화 필터 상태를 점검하고 자격 권한을 수정 제어합니다.</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">JM5 프레임워크와의 양방향 원격 DB 및 동기화 필터 상태를 점검하고 자격 권한을 수정 제어합니다.</p>
                   </div>
                   <button
                     onClick={handleSyncSettings}
@@ -1742,10 +1742,10 @@ export default function AdminSection({
                 {/* Forms grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-2">
                   <div className="lg:col-span-6 space-y-4">
-                    <span className="text-[11px] font-black text-gray-950 border-b pb-1.5 block">⚙️ API 연동 자격 원단 설계</span>
+                    <span className="text-[11px] font-black text-gray-955 border-b pb-1.5 block">⚙️ API 연동 자격 원단 설계</span>
                     <div className="space-y-3">
                       <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold text-gray-400 block">그누보드 CMS API Endpoint URL</label>
+                        <label className="text-[10px] font-extrabold text-gray-400 block">JM CMS API Endpoint URL</label>
                         <input
                           type="text"
                           value={g5ApiUrl}
@@ -1756,7 +1756,7 @@ export default function AdminSection({
                       </div>
 
                       <div className="space-y-1">
-                        <label className="text-[10px] font-extrabold text-gray-400 block">그누보드 API 보안 Secret Key (Bearer Token)</label>
+                        <label className="text-[10px] font-extrabold text-gray-400 block">JM API 보안 Secret Key (Bearer Token)</label>
                         <input
                           type="password"
                           value={g5ApiKey}
@@ -1828,7 +1828,7 @@ export default function AdminSection({
                     <div className="space-y-3 pt-1">
                       <div className="flex items-center justify-between p-3 bg-slate-50/50 border border-gray-200/50 rounded-2xl">
                         <div>
-                          <div className="text-xs font-bold text-gray-900 font-sans">그누보드5 회신 동기화</div>
+                          <div className="text-xs font-bold text-gray-900 font-sans">JM5 회신 동기화</div>
                           <div className="text-[9px] text-gray-400 font-bold tracking-tight">gb5_member 테이블 스트림 연공 자동 임포트</div>
                         </div>
                         <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
@@ -1855,7 +1855,7 @@ export default function AdminSection({
                       <span className="text-[9px] font-black text-purple-600 tracking-wide uppercase font-mono font-sans font-semibold">원격 제어 등급</span>
                       <h5 className="font-bold text-gray-900 text-xs font-sans">양방향 API 등급 필터 최적화</h5>
                       <p className="text-[10.5px] text-gray-500 leading-normal">
-                        회원 등급 조정, 정회원 심사 서류 자동 검인, 임기 정산 등 민감한 원장 수정 API는 그누보드의 Level 10 최고 관리국 세션 권한이 부여된 연결에서만 수립됩니다.
+                        회원 등급 조정, 정회원 심사 서류 자동 검인, 임기 정산 등 민감한 원장 수정 API는 JM의 Level 10 최고 관리국 세션 권한이 부여된 연결에서만 수립됩니다.
                       </p>
                     </div>
                   </div>
@@ -2737,11 +2737,11 @@ export default function AdminSection({
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-                          <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">GnuBoard mb_member DB</span>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">JM mb_member DB</span>
                         </div>
-                        <h3 className="text-lg font-black text-gray-950 mt-1">그누보드5 회원 통합 관리처</h3>
+                        <h3 className="text-lg font-black text-gray-950 mt-1">JM 회원 통합 관리처</h3>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          그누보드5의 <code className="bg-slate-100 font-mono px-1 rounded text-red-500 text-[11px]">g5_member</code> 테이블 원장과
+                          JM의 <code className="bg-slate-100 font-mono px-1 rounded text-red-500 text-[11px]">g5_member</code> 테이블 원장과
                           직접 연동되는 회원 목록입니다. 등급(mb_level) 조정, 실명 조회 및 인가 조치를 취결합니다.
                         </p>
                       </div>
@@ -2763,7 +2763,7 @@ export default function AdminSection({
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-3xs cursor-pointer flex items-center gap-1.5 self-start md:self-center shrink-0"
                       >
                         {isAddingMember ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
-                        {isAddingMember ? '등록창 닫기' : '신규 그누보드 회원 등록'}
+                        {isAddingMember ? '등록창 닫기' : '신규 JM 회원 등록'}
                       </button>
                     </div>
 
@@ -2772,7 +2772,7 @@ export default function AdminSection({
                       <div className="glass-card p-6 rounded-3xl border border-blue-150 bg-blue-50/10 space-y-4 animate-in slide-in-from-top-4 duration-200">
                         <div className="border-b border-gray-100 pb-2">
                           <h4 className="text-xs font-extrabold text-blue-900 uppercase tracking-wider">신규 회원 DB INSERT 정보 등록</h4>
-                          <p className="text-[10px] text-gray-400">GnuBoard 데이터베이스 원장에 INSERT 실행될 가상 레코드입니다.</p>
+                          <p className="text-[10px] text-gray-400">JM 데이터베이스 원장에 INSERT 실행될 가상 레코드입니다.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           <div>
@@ -2806,7 +2806,7 @@ export default function AdminSection({
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-gray-500 font-bold block mb-1">그누보드 권한 등급 (Level)</label>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1">JM 권한 등급 (Level)</label>
                             <select
                               className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-xs text-gray-800 focus:border-blue-500 focus:outline-none font-semibold"
                               value={memberForm.mb_level}
@@ -2887,7 +2887,7 @@ export default function AdminSection({
                       <div className="glass-card p-6 rounded-3xl border border-amber-300 bg-amber-50/10 space-y-4 animate-in slide-in-from-top-4 duration-200">
                         <div className="border-b border-gray-100 pb-2">
                           <h4 className="text-xs font-extrabold text-amber-800 uppercase tracking-wider">회원 ID: [{editingMember.mb_id}] 상세 정보 수정 (UPDATE)</h4>
-                          <p className="text-[10px] text-gray-400">그누보드 회원의 권한 등급 및 인적 기수 정보를 즉시 교정 업데이트합니다.</p>
+                          <p className="text-[10px] text-gray-400">JM 회원의 권한 등급 및 인적 기수 정보를 즉시 교정 업데이트합니다.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                           <div>
@@ -2909,7 +2909,7 @@ export default function AdminSection({
                             />
                           </div>
                           <div>
-                            <label className="text-[10px] text-gray-500 font-bold block mb-1">그누보드 권한 등급 (Level)</label>
+                            <label className="text-[10px] text-gray-500 font-bold block mb-1">JM 권한 등급 (Level)</label>
                             <select
                               className="w-full bg-white border border-gray-200 px-3 py-2 rounded-xl text-xs text-gray-850 focus:border-blue-500 focus:outline-none font-bold"
                               value={editingMember.mb_level}
@@ -2996,7 +2996,7 @@ export default function AdminSection({
                         }`}
                       >
                         <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGnuMembers ? 'animate-spin' : ''}`} />
-                        {isSyncingGnuMembers ? '데이터 연동 확인 중...' : '⚡ 그누보드 회원 실시간 동기화'}
+                        {isSyncingGnuMembers ? '데이터 연동 확인 중...' : '⚡ JM 회원 실시간 동기화'}
                       </button>
                     </div>
 
@@ -3034,7 +3034,7 @@ export default function AdminSection({
                                   {paginatedMembers.length === 0 ? (
                                     <tr>
                                       <td colSpan={8} className="py-8 text-center text-gray-400 font-bold">
-                                        검색 키워드에 상응하는 그누보드 가입 회원이 발견되지 않았습니다.
+                                        검색 키워드에 상응하는 JM 가입 회원이 발견되지 않았습니다.
                                       </td>
                                     </tr>
                                   ) : (
@@ -3099,7 +3099,7 @@ export default function AdminSection({
                                           <button
                                             disabled={m.mb_id === 'admin'}
                                             onClick={() => {
-                                              if (confirm(`진짜로 그누보드 ID [${m.mb_id}] 회원을 영구 제명(DELETE) 하시겠습니까?`)) {
+                                              if (confirm(`진짜로 JM ID [${m.mb_id}] 회원을 영구 제명(DELETE) 하시겠습니까?`)) {
                                                 setGnuMembers(gnuMembers.filter((item) => item.mb_id !== m.mb_id));
                                                 setConsoleLogs((prev) => [
                                                   ...prev,
@@ -3179,11 +3179,11 @@ export default function AdminSection({
                       <div>
                         <div className="flex items-center gap-1.5">
                           <span className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
-                          <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">GnuBoard g5_board CMS</span>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">JM g5_board CMS</span>
                         </div>
-                        <h3 className="text-lg font-black text-gray-950 mt-1">그누보드5 게시판 통합 관리원</h3>
+                        <h3 className="text-lg font-black text-gray-950 mt-1">JM 게시판 통합 관리원</h3>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          표준 그누보드5 프레임워크의 각 게시판 마다 개별 데이터 레코드 (<code className="bg-slate-100 font-mono px-1 rounded text-red-500 text-[11px]">g5_write_...</code>)들을
+                          표준 JM 프레임워크의 각 게시판 마다 개별 데이터 레코드 (<code className="bg-slate-100 font-mono px-1 rounded text-red-500 text-[11px]">g5_write_...</code>)들을
                           조회, 등록, 수정, 삭제(CRUD) 처리합니다.
                         </p>
                       </div>
@@ -3212,7 +3212,7 @@ export default function AdminSection({
                     {isAddingPost && (
                       <div className="glass-card p-6 rounded-3xl border border-blue-150 bg-blue-50/10 space-y-4 animate-in slide-in-from-top-4 duration-200">
                         <div className="border-b border-gray-100 pb-2">
-                          <h4 className="text-xs font-extrabold text-blue-950">그누보드 테이블에 신규 게시글 강제 INSERT</h4>
+                          <h4 className="text-xs font-extrabold text-blue-950">JM 테이블에 신규 게시글 강제 INSERT</h4>
                           <p className="text-[10px] text-gray-400">데이터가 즉시 연동 반영되며, 메인 홈페이지 소통게시판 탭에서도 영구 표출됩니다.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3605,11 +3605,11 @@ export default function AdminSection({
                       <div>
                         <div className="flex items-center gap-1.5">
                           <Globe className="w-4 h-4 text-blue-600" />
-                          <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">GnuBoard PHP Transceiver Bridge</span>
+                          <span className="text-[10px] uppercase font-black tracking-widest text-blue-600">JM PHP Transceiver Bridge</span>
                         </div>
-                        <h4 className="text-base font-black text-gray-950 mt-1">그누보드5 실시간 API 연동망</h4>
+                        <h4 className="text-base font-black text-gray-950 mt-1">JM 실시간 API 연동망</h4>
                         <p className="text-[11px] text-gray-400 mt-0.5">
-                          본 React 앱의 오프라인 검인 데이터베이스와 실제 독립 PHP 그누보드5 서버 간의 데이터 양방향 송수신(API Sync) 구조를 설정합니다.
+                          본 React 앱의 오프라인 검인 데이터베이스와 실제 독립 PHP JM 서버 간의 데이터 양방향 송수신(API Sync) 구조를 설정합니다.
                         </p>
                       </div>
 
@@ -3678,7 +3678,7 @@ export default function AdminSection({
                                   setSyncStatus('success');
                                   setConsoleLogs((prev) => [
                                     ...prev,
-                                    `[API SYNC] ${new Date().toLocaleTimeString()} Successfully pulsed ${gnuMembers.length} users & ${boardPosts.length} post streams with external GnuBoard API ${g5ApiUrl}`
+                                    `[API SYNC] ${new Date().toLocaleTimeString()} Successfully pulsed ${gnuMembers.length} users & ${boardPosts.length} post streams with external JM API ${g5ApiUrl}`
                                   ]);
                                 }
                               }, index * 250);
@@ -3687,21 +3687,22 @@ export default function AdminSection({
                           className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all shadow-sm cursor-pointer flex items-center justify-center gap-2"
                         >
                           <RefreshCw className="w-4 h-4 animate-spin-slow" />
-                          그누보드 DB와 API 송수신 동기화 실행 (Sync Now)
+                          JM DB와 API 송수신 동기화 실행 (Sync Now)
                         </button>
                       </div>
                     </div>
 
+                    {/* API Code Guide Column */}
                     {/* API Code Guide Column */}
                     <div className="lg:col-span-7 glass-card p-6 rounded-3xl border border-gray-150 bg-white flex flex-col justify-between space-y-4">
                       <div className="space-y-3">
                         <div>
                           <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold">
                             <Code className="w-4 h-4 text-indigo-500" />
-                            <span>서버 연동용 GnuBoard API 브릿지 PHP 스크립트 소스코드</span>
+                            <span>서버 연동용 JM API 브릿지 PHP 스크립트 소스코드</span>
                           </div>
                           <p className="text-[10px] text-gray-400 mt-1 leading-relaxed">
-                            독립형 그누보드5 PHP 서버의 루트 폴더에 아래 소스코드를 담고 파일명을{' '}
+                            독립형 JM PHP 서버의 루트 폴더에 아래 소스코드를 담고 파일명을{' '}
                             <code className="bg-slate-100 font-mono text-indigo-600 px-1 py-0.5 rounded text-[11px]">sync_bridge.php</code>로 저장하여 업로드한 후,
                             좌측 입력 폼에 등록해 주십시오. 본 React 관리망의 데이터가 MySQL DB 테이블에 직접 영구 주입 연동되게 만듭니다.
                           </p>
@@ -3761,7 +3762,7 @@ if (isset($payload['members']) && is_array($payload['members'])) {
                 mb_hp = '{$mb_tel}'
                 WHERE mb_id = '{$mb_id}' ");
         } else {
-            // 새 그누보드 회원가입 승인 (INSERT)
+            // 새 JM 회원가입 승인 (INSERT)
             sql_query("INSERT INTO {$g5['member_table']} SET 
                 mb_id = '{$mb_id}',
                 mb_name = '{$mb_name}',
@@ -3826,14 +3827,14 @@ echo json_encode(array(
 ));
 ?>`;
                               navigator.clipboard.writeText(phpCode);
-                              alert('GnuBoard API sync_bridge.php 스크립트 소스코드가 클립보드에 성실히 복사되어 다운로드 대기상태가 되었습니다.');
+                              alert('JM API sync_bridge.php 스크립트 소스코드가 클립보드에 성실히 복사되어 다운로드 대기상태가 되었습니다.');
                             }}
                             className="absolute top-3 right-3 bg-slate-800 text-indigo-400 hover:bg-slate-750 border border-slate-700 px-3 py-1.5 rounded transition-all text-[9px] font-bold cursor-pointer"
                           >
                             코드 클립보드 복사
                           </button>
                           <span className="text-emerald-500 font-extrabold block mb-2">&lt;?php</span>
-                          <span className="text-zinc-550 block">// 1. 그누보드5 공용 인클루드 인가</span>
+                          <span className="text-zinc-550 block">// 1. JM 공용 인클루드 인가</span>
                           <span className="text-blue-400">include_once</span>(<span className="text-emerald-400">'./common.php'</span>);<br />
                           <span className="text-blue-400">header</span>(<span className="text-emerald-400">'Content-Type: application/json; charset=utf-8'</span>);<br /><br />
 
@@ -3869,7 +3870,7 @@ echo json_encode(array(
                         <div>
                           <strong>보안 경고 및 준수 사항</strong>
                           <p className="text-[10px] text-gray-500 leading-normal mt-0.5">
-                            그누보드 CMS는 외부 SQL 인젝션 공격에 민감할 수 있으므로, 연동 API 스크립트 작성 시 반드시{' '}
+                            JM CMS는 외부 SQL 인젝션 공격에 민감할 수 있으므로, 연동 API 스크립트 작성 시 반드시{' '}
                             <code className="bg-slate-200 font-mono px-1 rounded">sql_real_escape_string()</code>이나 SQL 파라미터화 바인딩을 필히 이행하시기 바랍니다.
                           </p>
                         </div>
@@ -3878,7 +3879,7 @@ echo json_encode(array(
                   </motion.div>
                 )}
 
-                {/* GnuBoard DB Schema & API Configuration Detail view (New Sub-tab as requested) */}
+                {/* JM DB Schema & API Configuration Detail view (New Sub-tab as requested) */}
                 {activeAdminSubTab === 'g5_schema_config' && (
                   <motion.div
                     key="g5-schema-config"
@@ -3892,11 +3893,11 @@ echo json_encode(array(
                         <div className="space-y-1">
                           <div className="flex items-center gap-1.55">
                             <Sliders className="w-4 h-4 text-indigo-600 animate-spin-slow" />
-                            <span className="text-[10px] uppercase font-black tracking-widest text-indigo-600">GnuBoard5 & MariaDB Specification Ledger</span>
+                            <span className="text-[10px] uppercase font-black tracking-widest text-indigo-600">JM & MariaDB Specification Ledger</span>
                           </div>
-                          <h4 className="text-lg font-black text-gray-950 mt-1 font-sans">그누보드5 연동 규격 및 표준 MySQL 스키마 명세서</h4>
+                          <h4 className="text-lg font-black text-gray-950 mt-1 font-sans">JM 연동 규격 및 표준 MySQL 스키마 명세서</h4>
                           <p className="text-[11.5px] text-gray-600 mt-0.5 leading-relaxed">
-                            본 ERP 행정망 시스템과 독자적 그누보드5 독립 웹사이트의 원격 DB 간 완벽한 양방향 동기화(E2E Data Synergy)를 수행하기 위한 데이터 정의 사양(DB Schema), 그리고 실전 배포를 위한 <strong>완벽하게 가다듬어진 실제 연동용 PHP 동기화 브릿지 파일</strong>을 즉시 확인하고 내려받을 수 있습니다.
+                            본 ERP 행정망 시스템과 독자적 JM 독립 웹사이트의 원격 DB 간 완벽한 양방향 동기화(E2E Data Synergy)를 수행하기 위한 데이터 정의 사양(DB Schema), 그리고 실전 배포를 위한 <strong>완벽하게 가다듬어진 실제 연동용 PHP 동기화 브릿지 파일</strong>을 즉시 확인하고 내려받을 수 있습니다.
                           </p>
                         </div>
                         <div className="shrink-0 flex items-center gap-2">
@@ -3905,10 +3906,10 @@ echo json_encode(array(
                             onClick={() => {
                               const phpCode = `<?php
 /**
- * 사단법인 북한이탈주민중앙회 (북민회) - 그누보드5 (GnuBoard5) 실시간 동기화 브릿지 API v1.2.0
+ * 사단법인 북한이탈주민중앙회 (북민회) - JM 실시간 동기화 브릿지 API v1.2.0
  * 
  * [설치 및 사용 방법]
- * 1. 이 파일을 그누보드5가 설치된 서버의 루트 폴더 또는 특정 폴더(예: /api/sync_bridge.php)에 업로드합니다.
+ * 1. 이 파일을 JM이 설치된 서버의 루트 폴더 또는 특정 폴더(예: /api/sync_bridge.php)에 업로드합니다.
  * 2. 보안을 위해 하단의 $API_SECRET_TOKEN 값을 북민회 ERP 행정 시스템에 입력한 Secret Key와 완전히 동일하게 변경하십시오.
  * 3. 이 파일이 정상 작동하려면 PHP PDO MySQL 익스텐션이 활성화되어 있어야 합니다.
  */
@@ -3966,19 +3967,19 @@ if (!$input_data) {
 
 $action = isset($input_data['action']) ? $input_data['action'] : '';
 
-// 6. DB 동적으로 부팅 처리 또는 그누보드5의 dbconfig.php 자동 로드 설정
+// 6. DB 동적으로 부팅 처리 또는 JM의 dbconfig.php 자동 로드 설정
 // 본 스크립트는 원격 동적 진단 및 안전한 범용 PDO 모듈을 탑재하고 있습니다.
 $db_host = isset($input_data['db_host']) ? $input_data['db_host'] : '';
 $db_name = isset($input_data['db_name']) ? $input_data['db_name'] : '';
 $db_user = isset($input_data['db_user']) ? $input_data['db_user'] : '';
 $db_password = isset($input_data['db_password']) ? $input_data['db_password'] : '';
 
-// 값이 수동으로 전송되지 않은 경우, 로컬 그누보드5의 dbconfig.php 파일을 자동 탐색하여 연결할 수 있습니다.
+// 값이 수동으로 전송되지 않은 경우, 로컬 JM의 dbconfig.php 파일을 자동 탐색하여 연결할 수 있습니다.
 if (empty($db_host)) {
     $g5_config_path = dirname(__FILE__) . '/../common.php'; // common.php 경로 역탐색
     if (file_exists($g5_config_path)) {
         @include_once($g5_config_path);
-        // 그누보드 상수 사용 가능 시 대입
+        // JM 상수 사용 가능 시 대입
         if (defined('G5_MYSQL_HOST')) {
             $db_host = G5_MYSQL_HOST;
             $db_name = G5_MYSQL_DB;
@@ -4017,7 +4018,7 @@ switch ($action) {
     // [Action A] 커넥션 안정성 사전 테스팅 (Pre-flight Test)
     case 'test_db_connection':
         try {
-            // 그누보드5 회원 수 및 게시글 통계 요약 쿼리 질의
+            // JM 회원 수 및 게시글 통계 요약 쿼리 질의
             $member_stmt = $pdo->query("SELECT COUNT(*) as cnt FROM \`g5_member\`");
             $member_count = $member_stmt->fetch()['cnt'];
 
@@ -4026,7 +4027,7 @@ switch ($action) {
 
             echo json_encode([
                 "status" => "success",
-                "message" => "Connected to GnuBoard MariaDB safely!",
+                "message" => "Connected to JM MariaDB safely!",
                 "timestamp" => date("Y-m-d H:i:s"),
                 "metrics" => [
                     "totalMembers" => intval($member_count),
@@ -4042,7 +4043,7 @@ switch ($action) {
         }
         break;
 
-    // [Action B] 그누보드5 정회원 대조/목록 동기화 (G5 Members Read)
+    // [Action B] JM 정회원 대조/목록 동기화 (G5 Members Read)
     case 'get_members':
         try {
             // 최신 가입 회원 순 500명 추출
@@ -4162,7 +4163,7 @@ switch ($action) {
                               link.click();
                               document.body.removeChild(link);
                               URL.revokeObjectURL(url);
-                              alert('실전 연동용 g5_sync_bridge.php 파일 다운로드가 시작되었습니다. 이 파일을 그누보드5 서버에 업로드하세요!');
+                              alert('실전 연동용 g5_sync_bridge.php 파일 다운로드가 시작되었습니다. 이 파일을 JM 서버에 업로드하세요!');
                             }}
                             className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[11px] px-4 py-2.5 rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-1.5 active:scale-97"
                           >
@@ -4196,7 +4197,7 @@ switch ($action) {
                       <div className="p-3 bg-indigo-50 border border-indigo-150 rounded-2xl text-[10.5px] leading-relaxed text-indigo-950 font-bold flex gap-2">
                         <Activity className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
                         <div>
-                          <strong>⚙️ 실제 그누보드 데이터 검인 및 원장 연계 보안 준수 가이드</strong>
+                          <strong>⚙️ 실제 JM 데이터 검인 및 원장 연계 보안 준수 가이드</strong>
                           <p className="font-medium text-[9.5px] text-indigo-850 mt-0.5 leading-relaxed">
                             이 브릿지 파일은 보안인증 토큰(<span className="font-mono font-bold text-red-600 bg-slate-100 px-1 rounded">bukmin_g5_secure_token_key_2026</span>)을 통한 Bearer Auth와, 수혜인 실명 검인, 자동 회원 등급 조정을 완벽히 상호 실행시킵니다.
                           </p>
@@ -4278,7 +4279,7 @@ switch ($action) {
                             <li><strong>보안성 기여:</strong> PHP 소스코드의 시작과 독립된 도메인 수준 규칙 규정으로 안정성이 최적화됩니다.</li>
                           </ul>
                           <div className="text-[10px] text-gray-500 font-semibold pt-1">
-                            * 사용 방법: 그누보드 서버의 루트 디렉토리에 있는 <code className="bg-slate-150 rounded px-1 text-gray-800 font-mono">.htaccess</code> 파일 끝자락에 위 블록을 그대로 붙여넣어 저장하십시오.
+                            * 사용 방법: JM 서버의 루트 디렉토리에 있는 <code className="bg-slate-150 rounded px-1 text-gray-800 font-mono">.htaccess</code> 파일 끝자락에 위 블록을 그대로 붙여넣어 저장하십시오.
                           </div>
                         </div>
                       </div>
@@ -4291,9 +4292,9 @@ switch ($action) {
                           <div className="border-b border-gray-100 pb-2.5">
                             <h3 className="text-sm font-black text-gray-950 flex items-center gap-1.5 font-sans">
                               <Database className="w-4 h-4 text-blue-600" />
-                              <span>그누보드5 기반 표준 DB 스키마 명세</span>
+                              <span>JM 기반 표준 DB 스키마 명세</span>
                             </h3>
-                            <p className="text-[10px] text-gray-400 mt-0.5">그누보드5 MySQL/MariaDB 필수 연동 테이블 3종 매핑가이드</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">JM MySQL/MariaDB 필수 연동 테이블 3종 매핑가이드</p>
                           </div>
 
                           <div className="space-y-4 max-h-[580px] overflow-y-auto pr-2">
@@ -4535,9 +4536,9 @@ switch ($action) {
                           <div className="border-b border-gray-100 pb-2.5 text-left">
                             <h3 className="text-sm font-black text-gray-950 flex items-center gap-1.5 font-sans">
                               <Code className="w-4 h-4 text-indigo-600" />
-                              <span>GnuBoard API 엔드포인트 필드 정의</span>
+                              <span>JM API 엔드포인트 필드 정의</span>
                             </h3>
-                            <p className="text-[10px] text-gray-400 mt-0.5">그누보드5 연동 규격 요청(Request) / 응답(Response) 사양서</p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">JM 연동 규격 요청(Request) / 응답(Response) 사양서</p>
                           </div>
 
                           <div className="space-y-4 text-xs">
@@ -4640,7 +4641,7 @@ switch ($action) {
                             >
                               <div className="font-extrabold flex items-center gap-1.5 mb-1.5">
                                 <span className={`w-2 h-2 rounded-full ${syncSettingsResult.success ? 'bg-emerald-500 animate-ping' : 'bg-rose-500'}`}></span>
-                                <strong>{syncSettingsResult.success ? '그누보드 원장 실제 수신 검증 완료!' : '그누보드 원격 연결 실패'}</strong>
+                                <strong>{syncSettingsResult.success ? 'JM 원장 실제 수신 검증 완료!' : 'JM 원격 연결 실패'}</strong>
                                 <span className="text-[9.5px] text-gray-400 font-mono">({syncSettingsResult.timestamp})</span>
                               </div>
                               <p className="text-slate-650 text-[10px] whitespace-pre-line">{syncSettingsResult.message}</p>
@@ -4656,7 +4657,7 @@ switch ($action) {
                                 className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 text-white rounded-xl text-xs font-black transition-all shadow-md active:scale-99 flex items-center justify-center gap-2 cursor-pointer font-sans"
                             >
                               <RefreshCw className={`w-4 h-4 ${isSyncingSettings ? 'animate-spin' : ''}`} />
-                              {isSyncingSettings ? '그누보드 원격지 API 실제 통신 세션 분석 중...' : '⚡ 그누보드 API 실제 회선 연결 테스트 및 실시간 연동'}
+                              {isSyncingSettings ? 'JM 원격지 API 실제 통신 세션 분석 중...' : '⚡ JM API 실제 회선 연결 테스트 및 실시간 연동'}
                             </button>
                           </div>
                         </div>
@@ -4730,7 +4731,7 @@ switch ($action) {
                       <div className="flex items-center justify-between border-b border-gray-150 pb-3.5">
                         <div className="flex items-center gap-2">
                           <Activity className={`w-4 h-4 ${diagnosticState === 'checking' ? 'text-blue-600 animate-pulse' : 'text-blue-500'}`} />
-                          <span className="font-extrabold text-[13px] text-gray-900">그누보드5 실시간 연동 테스트 진단기 (G5 Connection Diagnostics)</span>
+                          <span className="font-extrabold text-[13px] text-gray-900">JM 실시간 연동 테스트 진단기 (JM Connection Diagnostics)</span>
                         </div>
                         <button
                           onClick={() => setShowDiagnosticModal(false)}
@@ -4762,12 +4763,12 @@ switch ($action) {
                         </div>
                         <div className="text-left space-y-1">
                           <h5 className="font-black text-gray-950 text-xs">
-                            {diagnosticState === 'checking' && '원격 GnuBoard 연동망 진단 실행 중...'}
+                            {diagnosticState === 'checking' && '원격 JM 연동망 진단 실행 중...'}
                             {diagnosticState === 'success' && '연결 진단 합격 (Connection Established!)'}
                             {diagnosticState === 'failed' && '연동 진단 실패 (Troubleshooting Active)'}
                           </h5>
                           <p className="text-[10.5px] text-gray-400">
-                            {diagnosticState === 'checking' && '원격 그누보드 서버와의 홉바이홉 지연 속도 및 DB 자격 증명을 측정 중입니다.'}
+                            {diagnosticState === 'checking' && '원격 JM 서버와의 홉바이홉 지연 속도 및 DB 자격 증명을 측정 중입니다.'}
                             {diagnosticState === 'success' && `원격 데이터 노드와의 Latency: ${diagnosticLatency}ms | 버전: ${diagnosticDetails?.server_version || '1.2.0'}`}
                             {diagnosticState === 'failed' && '패킷이 거부되었거나 원격 MySQL 설정이 단절되었습니다.'}
                           </p>
@@ -4830,8 +4831,8 @@ switch ($action) {
                             <span>연동 복구를 위한 핵심 액션 체크리스트</span>
                           </div>
                           <ul className="text-[10.5px] text-gray-600 list-disc list-inside space-y-1 leading-relaxed pl-1 font-semibold">
-                            <li><strong>PHP 브릿지 경로:</strong> 파일이 그누보드 설치 서버에 업로드되었으며 주소가 정확합니까?</li>
-                            <li><strong>CORS Access 헤더:</strong> PHP 파일 상단에 <code>header("Access-Control-Allow-Origin: *");</code> 가 수립되었거나, 그누보드 서버의 <code>.htaccess</code> 파일에 Apache CORS 규칙이 활성화되어 있는지 확인하십시오.</li>
+                            <li><strong>PHP 브릿지 경로:</strong> 파일이 JM 설치 서버에 업로드되었으며 주소가 정확합니까?</li>
+                            <li><strong>CORS Access 헤더:</strong> PHP 파일 상단에 <code>header("Access-Control-Allow-Origin: *");</code> 가 수립되었거나, JM 서버의 <code>.htaccess</code> 파일에 Apache CORS 규칙이 활성화되어 있는지 확인하십시오.</li>
                             <li><strong>보안 인증키 대조:</strong> React ERP Secret Key와 PHP 브릿지의 <code>$API_SECRET_TOKEN</code> 값이 정확히 같은지 점검하십시오.</li>
                             <li><strong>DB 세션 점검:</strong> MySQL DB의 호스트명, 암호 오탈자를 다시 한번 확인하십시오.</li>
                           </ul>

@@ -237,7 +237,7 @@ export default function AdminDashboard({
       });
       setLastFetchTime(new Date().toLocaleTimeString());
       setIsFetchingG5Data(false);
-      triggerFeedback('그누보드 API 신호 실시간 동기화 완료');
+      triggerFeedback('JM API 신호 실시간 동기화 완료');
     }, 1200);
   };
 
@@ -434,7 +434,7 @@ export default function AdminDashboard({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-gray-950">그누보드5 원격 DB 터널 인터페이스</span>
+                <span className="text-xs font-black text-gray-950">JM 원격 DB 터널 인터페이스</span>
                 <span className={`text-[9.5px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded ${isFetchingG5Data ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
                   {isFetchingG5Data ? 'API FETCHING' : 'DYNAMIC IN-SYNC'}
                 </span>
@@ -504,7 +504,7 @@ export default function AdminDashboard({
             </div>
           )}
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider block">그누보드 총 회원 수</span>
+            <span className="text-[10px] font-extrabold text-blue-800 uppercase tracking-wider block">JM 총 회원 수</span>
             <h3 className="text-xl font-black text-gray-950 font-mono tracking-tight">
               <CountUp value={g5Metrics.totalMembers} />명
             </h3>
@@ -554,7 +554,7 @@ export default function AdminDashboard({
             </div>
           )}
           <div className="space-y-1">
-            <span className="text-[10px] font-extrabold text-indigo-800 uppercase tracking-wider block">그누보드 통합 게시물</span>
+            <span className="text-[10px] font-extrabold text-indigo-800 uppercase tracking-wider block">JM 통합 게시물</span>
             <h3 className="text-xl font-black text-indigo-600 font-mono tracking-tight">
               <CountUp value={g5Metrics.totalPosts} />건
             </h3>
@@ -604,7 +604,7 @@ export default function AdminDashboard({
               </div>
               <h4 className="text-xs font-black text-gray-800 leading-snug">
                 {activeTipIndex === 0 && "입국 확인서 확인: 신임 정회원 상신 정보는 통일부가 발행한 '남북협력지원 원격 원장 데이터베이스' 실무 서류와 교차 확인을 강력히 권장합니다."}
-                {activeTipIndex === 1 && "회원 가입 승격 권한: 그누보드5 회원 연동 시 mb_level이 3 이상이 되어야만 '알림 마당'의 지정기탁 투명 공시글 수정 권한이 배정됩니다."}
+                {activeTipIndex === 1 && "회원 가입 승격 권한: JM 회원 연동 시 mb_level이 3 이상이 되어야만 '알림 마당'의 지정기탁 투명 공시글 수정 권한이 배정됩니다."}
                 {activeTipIndex === 2 && "기여금 회계 전산 감사: 지정 기부 후원 영수 발행 실적은 매년 3월 말까지 일괄 국세청 홈택스 API에 전산 전결 처리되어야 위법 과태료를 면제받습니다."}
                 {activeTipIndex === 3 && "자립 봉사 물자 기준: 자조 봉사단 '통일 하나눔'의 오찬 배식 빵 제조 시에는 청결한 위생복 착용 하에 300g 균등 분할 배합을 완비해 주십시오."}
               </h4>
@@ -620,7 +620,7 @@ export default function AdminDashboard({
         </div>
       </motion.div>
 
-      {/* 2.5 REAL-TIME GNUBOARD INTEGRAL ANALYTICAL CHARTS PANEL */}
+      {/* 2.5 REAL-TIME JM INTEGRAL ANALYTICAL CHARTS PANEL */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6" id="dashboard-g5-analytical-charts">
         
         {/* Left Card: Member Level Distribution Bar Chart (5 Cols) */}
@@ -634,7 +634,7 @@ export default function AdminDashboard({
               <span className="text-[9.5px] text-gray-400 font-black tracking-widest uppercase block">MEMBER PRIVILEGE INDEX</span>
               <h3 className="text-sm font-extrabold text-gray-950 font-sans flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-blue-600" />
-                <span>그누보드5 회원 권한 등급별 분포 통계</span>
+                <span>JM 회원 권한 등급별 분포 통계</span>
               </h3>
             </div>
             <span className="text-[10px] bg-blue-50 text-blue-650 px-2 py-0.5 rounded font-mono font-bold">
@@ -643,7 +643,7 @@ export default function AdminDashboard({
           </div>
 
           <p className="text-[10.5px] text-gray-500 font-medium leading-relaxed">
-            원격 그누보드 데이터베이스(<code className="font-mono bg-slate-50 text-indigo-600 px-0.5 rounded">g5_member</code>) 테이블에 가입 등재된 실제 회원들의 보안 레벨별 분포 비율입니다. 승인 요건을 충족하면 실시간 등수가 가감됩니다.
+            원격 JM 데이터베이스(<code className="font-mono bg-slate-50 text-indigo-600 px-0.5 rounded">g5_member</code>) 테이블에 가입 등재된 실제 회원들의 보안 레벨별 분포 비율입니다. 승인 요건을 충족하면 실시간 등수가 가감됩니다.
           </p>
 
           <div className="pt-2">
@@ -775,7 +775,7 @@ export default function AdminDashboard({
                 </div>
 
                 <p className="text-[10.5px] text-gray-500 font-medium leading-relaxed">
-                  그누보드 테이블의 가입 트래픽과 소통 글 작성 활동 빈도를 일자별로 분석하여 수치화한 트랜잭션 차트입니다. Recharts 라이브러리를 통해 동적으로 자동 바인딩됩니다.
+                  JM 테이블의 가입 트래픽과 소통 글 작성 활동 빈도를 일자별로 분석하여 수치화한 트랜잭션 차트입니다. Recharts 라이브러리를 통해 동적으로 자동 바인딩됩니다.
                 </p>
 
                 {/* Real interactive Recharts AreaChart */}
@@ -842,7 +842,7 @@ export default function AdminDashboard({
                 <Database className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="text-sm font-extrabold text-gray-950 font-sans">그누보드 API 브릿지 & DB 설정</h3>
+                <h3 className="text-sm font-extrabold text-gray-950 font-sans">JM API 브릿지 & DB 설정</h3>
                 <div className="text-[10px] text-gray-400 font-semibold font-sans">동기화 연동 정보 검증 및 실시간 연결관리</div>
               </div>
             </div>
@@ -880,8 +880,8 @@ export default function AdminDashboard({
                   <Settings className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-black text-gray-950 font-sans">그누보드5 연동 통합 설정</h3>
-                  <div className="text-[10px] text-gray-400 font-semibold">G5 DB 테이블 스키마 매핑 및 실시간 검증</div>
+                  <h3 className="text-sm font-black text-gray-950 font-sans">JM 연동 통합 설정</h3>
+                  <div className="text-[10px] text-gray-400 font-semibold">JM DB 테이블 스키마 매핑 및 실시간 검증</div>
                 </div>
               </div>
 
@@ -904,7 +904,7 @@ export default function AdminDashboard({
                   <span className="text-[9px] text-slate-400 font-bold tracking-wider uppercase block">동기화 연동 상태 현황 (CMS Connection Metrics)</span>
                   <div className="text-xs font-black flex items-center gap-1.5 font-sans">
                     <Database className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                    <span>그누보드 호스트: <code className="text-blue-300 font-mono text-[11px]">{g5DbHost || 'localhost'}</code></span>
+                    <span>JM 호스트: <code className="text-blue-300 font-mono text-[11px]">{g5DbHost || 'localhost'}</code></span>
                   </div>
                 </div>
                 
@@ -916,7 +916,7 @@ export default function AdminDashboard({
                     setTimeout(() => {
                       setIsVerifyingStatus(false);
                       setLastCheckMessage(g5ApiUrl && g5DbHost 
-                        ? `[정상] GnuBoard DB 원격 접속 성공: 게시판 ${g5BoardsConfig.length}개 설정 파싱 및 총 ${totalPosts}개 게시글 동기화 상태 (응답 11.2ms)`
+                        ? `[정상] JM DB 원격 접속 성공: 게시판 ${g5BoardsConfig.length}개 설정 파싱 및 총 ${totalPosts}개 게시글 동기화 상태 (응답 11.2ms)`
                         : `[대기] 가상 연결 검증: 로컬 가상 스토리지에 ${g5BoardsConfig.length}개의 가상 게시판과 총 ${totalPosts}개의 게시글 데이터 실시간 동기화 완료`
                       );
                     }, 650);
@@ -1172,9 +1172,9 @@ export default function AdminDashboard({
                 <div className="p-3.5 bg-indigo-50 border border-indigo-150 rounded-2xl text-[10.5px] leading-relaxed text-indigo-950 font-bold flex gap-2">
                   <Activity className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
                   <div>
-                    <strong>⚙️ 그누보드5 (GNU Board 5) 데이터 연합 규제 & 표준 MySQL 스키마 가이드</strong>
+                    <strong>⚙️ JM 데이터 연합 규제 & 표준 MySQL 스키마 가이드</strong>
                     <p className="font-medium text-[9.5px] text-indigo-805 mt-0.5 leading-relaxed">
-                      본 행정 시스템(ERP)은 그누보드 독립 웹사이트의 테이블 원장과 비침습적 양방향 터널을 통해 실시간 동기화를 구축합니다. 하단의 핵심 스키마 컬럼 및 API 연계 규격을 명세하여 주십시오.
+                      본 행정 시스템(ERP)은 JM 독립 웹사이트의 테이블 원장과 비침습적 양방향 터널을 통해 실시간 동기화를 구축합니다. 하단의 핵심 스키마 컬럼 및 API 연계 규격을 명세하여 주십시오.
                     </p>
                   </div>
                 </div>
@@ -1279,7 +1279,7 @@ export default function AdminDashboard({
                           <div className="grid grid-cols-12 p-2">
                             <div className="col-span-3 font-mono text-blue-600 font-extrabold">mb_level</div>
                             <div className="col-span-3 font-mono text-gray-500">TINYINT(4)</div>
-                            <div className="col-span-6">그누보드 내부 보안 등급, 후원 회원 검인 시 등급 2에서 자동 승급 처리</div>
+                            <div className="col-span-6">JM 내부 보안 등급, 후원 회원 검인 시 등급 2에서 자동 승급 처리</div>
                           </div>
                           <div className="grid grid-cols-12 p-2">
                             <div className="col-span-3 font-mono text-blue-600 font-extrabold">mb_name</div>
@@ -1399,7 +1399,7 @@ export default function AdminDashboard({
                           <span>g5_write_*: 개별 게시판 게시물 아티클 스키마</span>
                         </h4>
                         <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">
-                          그누보드에서 공지, 탈북 자유 아고라 등 개별 글을 적재할 때 생성되는 대표적인 컨텐트 저장 규격입니다.
+                          JM에서 공지, 탈북 자유 아고라 등 개별 글을 적재할 때 생성되는 대표적인 컨텐트 저장 규격입니다.
                         </p>
                       </div>
 
@@ -1480,7 +1480,7 @@ export default function AdminDashboard({
                           <span>통합 API Endpoint 데이터 맵핑 규격 템플릿</span>
                         </h4>
                         <p className="text-[10px] text-gray-500 mt-0.5 leading-relaxed">
-                          자신의 개별 도메인에 호스된 그누보드 브릿지 PHP API가 아래 JSON 형식 규격으로 반환 규격을 맵핑하여 설계해 주어야 연동이 완전 보장됩니다.
+                          자신의 개별 도메인에 호스된 JM 브릿지 PHP API가 아래 JSON 형식 규격으로 반환 규격을 맵핑하여 설계해 주어야 연동이 완전 보장됩니다.
                         </p>
                       </div>
 
@@ -1873,8 +1873,8 @@ export default function AdminDashboard({
                   <UserCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-extrabold text-gray-950 font-sans">그누보드 신규 회원 가입 승인대기</h3>
-                  <div className="text-[10px] text-gray-400 font-semibold">GnuBoard API로부터 수신된 대기 회원 목록</div>
+                  <h3 className="text-sm font-extrabold text-gray-950 font-sans">JM 신규 회원 가입 승인대기</h3>
+                  <div className="text-[10px] text-gray-400 font-semibold">JM API로부터 수신된 대기 회원 목록</div>
                 </div>
               </div>
               <span className="text-[10px] font-mono text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-black">
@@ -1890,7 +1890,7 @@ export default function AdminDashboard({
                   className="py-12 text-center text-gray-400 text-xs font-semibold flex flex-col items-center justify-center gap-2"
                 >
                   <CheckCircle2 className="w-8 h-8 text-emerald-500 bg-emerald-50 rounded-full p-1.5" />
-                  <span>현재 가입 승인 대기중인 그누보드 신임 회원이 없습니다.</span>
+                  <span>현재 가입 승인 대기중인 JM 신임 회원이 없습니다.</span>
                 </motion.div>
               ) : (
                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
@@ -1919,7 +1919,7 @@ export default function AdminDashboard({
                         <button
                           onClick={() => {
                             onApproveG5Member(m.id);
-                            triggerFeedback(`[${m.mb_name}] 회원이 그누보드 정회원으로 승인 완료되었습니다.`);
+                            triggerFeedback(`[${m.mb_name}] 회원이 JM 정회원으로 승인 완료되었습니다.`);
                           }}
                           className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black shadow-3xs cursor-pointer flex items-center gap-0.5 transition-colors"
                         >
@@ -2035,7 +2035,7 @@ export default function AdminDashboard({
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-gray-950 font-sans">실시간 통합 통신 및 DB 콘솔 로그</h3>
-                <div className="text-[10px] text-gray-400 font-semibold">그누보드 API 호출 흐름 및 SQL 전산 감시 내역</div>
+                <div className="text-[10px] text-gray-400 font-semibold">JM API 호출 흐름 및 SQL 전산 감시 내역</div>
               </div>
             </div>
             <span className="text-[9.5px] bg-slate-100 text-slate-500 font-mono px-2 py-0.5 rounded-md border border-slate-200">DB Live Syncing</span>

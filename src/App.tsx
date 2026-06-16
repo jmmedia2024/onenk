@@ -300,7 +300,7 @@ const UserProfileEditModal = ({
           <div className="text-left">
             <h3 className="text-base font-extrabold text-gray-950 tracking-tight flex items-center gap-2">
               <Settings className="w-5 h-5 text-blue-600 animate-spin-slow" />
-              내 소중한 원격 그누보드 정보
+              내 소중한 원격 JM 정보
             </h3>
             <p className="text-[11px] text-gray-400 mt-0.5">사단법인 북민회 안심 행정망 마이페이지</p>
           </div>
@@ -342,12 +342,12 @@ const UserProfileEditModal = ({
               </span>
             </div>
 
-            {/* 그누보드 5 실시간 DB 수집 메타 정보 Grid 카드 */}
+            {/* JM 5 실시간 DB 수집 메타 정보 Grid 카드 */}
             <div className="bg-slate-50/50 border border-slate-200/55 rounded-2xl p-4 space-y-3 select-none" id="profile-g5-metadata-box">
               <div className="flex items-center justify-between border-b border-gray-150 pb-2">
                 <span className="text-[10px] font-black text-blue-600 uppercase tracking-wider flex items-center gap-1.5">
                   <Database className="w-4 h-4 text-blue-500" />
-                  원격 그누보드5 DB 연합 필드 수집
+                  원격 JM5 DB 연합 필드 수집
                 </span>
                 <span className="inline-flex items-center gap-1 text-[9px] bg-emerald-50 text-emerald-600 font-extrabold px-1.5 py-0.5 rounded-md border border-emerald-100 select-none">
                   <span className="w-1 h-1 rounded-full bg-emerald-500 animate-ping"></span>
@@ -357,7 +357,7 @@ const UserProfileEditModal = ({
               
               <div className="grid grid-cols-2 gap-2 text-[10.5px]">
                 <div className="bg-white p-2.5 rounded-xl border border-gray-100 space-y-0.5">
-                  <span className="text-[9px] text-gray-400 font-bold block">그누보드 누적 포인트</span>
+                  <span className="text-[9px] text-gray-400 font-bold block">JM 누적 포인트</span>
                   <span className="text-gray-900 font-extrabold flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     {userProfile.point !== undefined ? userProfile.point.toLocaleString() : '0'} P
@@ -910,7 +910,7 @@ export default function App() {
         return true;
       }
 
-      setAuthErrorMsg(`[원격지 서버 비접근성] 그누보드 API CORS 또는 네트워크가 오프라인 환경(${errText})이며, 입력하신 아이디 '${mb_id}' 역시 로컬 브라우저 백업 보관소에 발견되지 않습니다. 간편 회원가입 탭을 열어 1초 회원 가입 즉시 로그인이 가능합니다.`);
+      setAuthErrorMsg(`[원격지 서버 비접근성] JM API CORS 또는 네트워크가 오프라인 환경(${errText})이며, 입력하신 아이디 '${mb_id}' 역시 로컬 브라우저 백업 보관소에 발견되지 않습니다. 간편 회원가입 탭을 열어 1초 회원 가입 즉시 로그인이 가능합니다.`);
       return false;
     }
   };
@@ -1225,7 +1225,7 @@ export default function App() {
     { tab: 'about', title: '설립 취지 & 인사말', desc: '자유를 넘어선 희망의 시작', highlight: '소개 바로가기' },
     { tab: 'projects', title: '권익 옹호 종합 사업', desc: '무료 법률 보호 및 정착 멘토', highlight: '사업 살펴보기' },
     { tab: 'donation', title: '투명 전산 후원 납부', desc: '농협 계좌 복사 및 서명 증서', highlight: '동참 바로가기' },
-    { tab: 'dev', title: 'PHP / MySQL 개발 센터', desc: '그누보드 설계 및 DB SQL', highlight: '개발자 자료실' },
+    { tab: 'dev', title: 'PHP / MySQL 개발 센터', desc: 'JM 설계 및 DB SQL', highlight: '개발자 자료실' },
   ];
 
   const filteredSearchItems = searchRepository.filter((item) => {
@@ -2002,7 +2002,7 @@ export default function App() {
                 onClick={() => setIsG5IntegratorOpen(true)}
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 border border-blue-200/50 rounded text-[9.5px] font-black text-blue-700 transition-all cursor-pointer hover:scale-103 active:scale-97 select-none"
                 id="footer-g5-badge-link"
-                title="그누보드5 실시간 통합 연동 및 자가 진단 허브 센터"
+                title="JM5 실시간 통합 연동 및 자가 진단 허브 센터"
               >
                 <span className="w-1 h-1 rounded-full bg-blue-600 animate-pulse"></span>
                 <span>[G5 통합연동]</span>
@@ -2370,7 +2370,7 @@ export default function App() {
                     <div className="text-left bg-blue-50/50 p-4 border border-blue-100/60 rounded-2xl mb-4 space-y-1">
                       <div className="text-xs font-bold text-blue-800 flex items-center gap-1">
                         <Shield className="w-3.5 h-3.5 shrink-0 animate-pulse" />
-                        그누보드5 실시간 DB 직접 인증 연계
+                        JM5 실시간 DB 직접 인증 연계
                       </div>
                       <p className="text-[10.5px] text-gray-500 font-medium leading-relaxed">
                         사단법인 북한이탈주민중앙회 승인 정회원은 지급된 아이디로 비공개 소통 공간에 한해 무제한 정착 자문을 획득할 수 있습니다. {isG5LiveAuth ? '🟢 현재 G5 실시간 MariaDB 직접 연동이 활성화되어 있습니다.' : '🔵 완벽한 UI 시뮬레이션 모드로 작동 중입니다.'}
@@ -2501,7 +2501,7 @@ export default function App() {
                         ) : (
                           <>
                             <LogIn className="w-4 h-4" /> 
-                            <span>그누보드 계정으로 로그인 완료</span>
+                            <span>JM 계정으로 로그인 완료</span>
                           </>
                         )}
                       </button>
@@ -2541,7 +2541,7 @@ export default function App() {
                         GnuBoard 5 DB 실시간 가입 동기화
                       </div>
                       <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                        가입 즉시 그누보드 표준 <code>g5_member</code> 테이블에 해시 처리된 암호로 즉시 보존 기록됩니다. 정회원 가입 축하 포인트 1,000점이 지급됩니다!
+                        가입 즉시 JM 표준 <code>g5_member</code> 테이블에 해시 처리된 암호로 즉시 보존 기록됩니다. 정회원 가입 축하 포인트 1,000점이 지급됩니다!
                       </p>
                     </div>
 

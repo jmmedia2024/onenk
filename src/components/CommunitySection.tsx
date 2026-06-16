@@ -337,7 +337,7 @@ export default function CommunitySection({
       setIsG5Submitting(false);
 
       if (!response.ok || result.status !== "success") {
-        setG5SubmitError(result.message || "원격 그누보드 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
+        setG5SubmitError(result.message || "원격 JM 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
         return;
       }
 
@@ -357,7 +357,7 @@ export default function CommunitySection({
       const updatedPosts = [newPostItem, ...posts];
       savePosts(updatedPosts);
 
-      setG5SubmitSuccess("그누보드 전산 데이터베이스에 실시간 양방향 전송 및 인가 등재를 완벽히 인출 완료하였습니다!");
+      setG5SubmitSuccess("JM 전산 데이터베이스에 실시간 양방향 전송 및 인가 등재를 완벽히 인출 완료하였습니다!");
       setG5Title("");
       setG5Content("");
 
@@ -494,7 +494,7 @@ export default function CommunitySection({
       setIsG5CommentSubmitting(false);
 
       if (!response.ok || result.status !== "success") {
-        setG5CommentError(result.message || "원격 그누보드 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
+        setG5CommentError(result.message || "원격 JM 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
         return;
       }
 
@@ -522,7 +522,7 @@ export default function CommunitySection({
 
       savePosts(updated);
       setNewCommentText('');
-      setG5CommentSuccess("그누보드 전산 데이터베이스에 실시간 양방향 댓글 등재를 완벽히 완료하였습니다!");
+      setG5CommentSuccess("JM 전산 데이터베이스에 실시간 양방향 댓글 등재를 완벽히 완료하였습니다!");
 
       window.dispatchEvent(new Event('bukmin_posts_updated'));
 
@@ -1288,7 +1288,7 @@ export default function CommunitySection({
 
               {/* Board Selection */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-gray-700 block">대상 그누보드 게시판 (bo_table)</label>
+                <label className="text-[11px] font-extrabold text-gray-700 block">대상 JM 게시판 (bo_table)</label>
                 <select
                   value={g5TargetBoard}
                   onChange={(e) => setG5TargetBoard(e.target.value as any)}
