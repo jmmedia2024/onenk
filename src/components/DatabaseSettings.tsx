@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { 
   Globe, 
   Database, 
@@ -235,7 +236,7 @@ export default function DatabaseSettings({
     
     try {
       // Test real connection to see if backend endpoints are physically listening
-      const testReq = await fetch(g5ApiUrl, {
+      const testReq = await safeG5Fetch(g5ApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -299,7 +300,7 @@ export default function DatabaseSettings({
           <div className="relative">
             <input
               type="text"
-              placeholder="https://yourdomain.com/api/sync_bridge.php"
+              placeholder="https://yourdomain.com/g5/g5_sync_bridge.php"
               value={g5ApiUrl}
               onChange={(e) => handleUrlChange(e.target.value)}
               className={`w-full text-xs font-mono font-bold bg-slate-50 border px-4 py-2.5 rounded-xl transition-all focus:outline-none ${

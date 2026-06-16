@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, Play, Pause, ArrowRight, Heart, Globe, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, ArrowRight, Heart, Globe, Sparkles, Image as ImageIcon } from 'lucide-react';
 
 interface HeroSlide {
   id: number;
@@ -14,9 +14,10 @@ interface MainHeroSliderProps {
   onNavigateTo: (tab: 'about' | 'donation') => void;
   slides?: HeroSlide[];
   onOpenG5Settings?: () => void;
+  onOpenBannerEditor?: () => void;
 }
 
-export default function MainHeroSlider({ onNavigateTo, slides: externalSlides, onOpenG5Settings }: MainHeroSliderProps) {
+export default function MainHeroSlider({ onNavigateTo, slides: externalSlides, onOpenG5Settings, onOpenBannerEditor }: MainHeroSliderProps) {
   const [current, setCurrent] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
 
@@ -107,10 +108,24 @@ export default function MainHeroSlider({ onNavigateTo, slides: externalSlides, o
         
         {/* Top bar indicators inside bounds */}
         <div className="flex items-center justify-between w-full no-print">
-          {/* Floating Sparkle Decoration */}
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full border border-gray-200 text-xs font-semibold text-blue-600 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
-            <span>실시간 정착 공헌 지수 공시 활성</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Floating Sparkle Decoration */}
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-white/95 backdrop-blur-md rounded-full border border-gray-200 text-xs font-semibold text-blue-600 shadow-xs">
+              <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
+              <span>실시간 정착 공헌 지수 공시 활성</span>
+            </div>
+
+            {onOpenBannerEditor && (
+              <button
+                type="button"
+                onClick={onOpenBannerEditor}
+                className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs hover:shadow-sm rounded-full transition-all cursor-pointer border border-blue-500 animate-pulse"
+                title="슬라이드 교체 관리자 도구 열기"
+              >
+                <ImageIcon className="w-3.5 h-3.5 text-white" />
+                <span>🖼️ 메인 배너 슬라이드 교체 관리</span>
+              </button>
+            )}
           </div>
 
           {/* Slide Navigation Overlay Controls on the Top Right */}

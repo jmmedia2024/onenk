@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { 
   Lock, 
   Unlock, 
@@ -380,7 +381,12 @@ export default function AdminSection({
       localStorage.setItem('bukmin_g5_api_url', envUrl);
       return envUrl;
     }
-    return stored || envUrl || 'http://onenk.kr/g5/sync_bridge.php';
+    if (!stored || stored.endsWith('sync_bridge.php')) {
+      const activeUrl = 'http://onenk.kr/g5/g5_sync_bridge.php';
+      localStorage.setItem('bukmin_g5_api_url', activeUrl);
+      return activeUrl;
+    }
+    return stored || envUrl || 'http://onenk.kr/g5/g5_sync_bridge.php';
   });
   const [g5ApiKey, setG5ApiKey] = useState<string>(() => {
     return localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
@@ -430,7 +436,12 @@ export default function AdminSection({
   // Sync settings when modified externally (e.g. from the G5 badge setup modal)
   useEffect(() => {
     const handleGlobalSync = () => {
-      setG5ApiUrl(localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/sync_bridge.php');
+      let url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php';
+      if (url.endsWith('/sync_bridge.php')) {
+        url = url.replace('/sync_bridge.php', '/g5_sync_bridge.php');
+        localStorage.setItem('bukmin_g5_api_url', url);
+      }
+      setG5ApiUrl(url);
       setG5ApiKey(localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848');
       setG5DbHost(localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1');
       setG5DbName(localStorage.getItem('bukmin_g5_db_name') || 'g5_database');
@@ -627,7 +638,7 @@ export default function AdminSection({
     ]);
 
     try {
-      const response = await fetch(g5ApiUrl, {
+      const response = await safeG5Fetch(g5ApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -687,7 +698,7 @@ export default function AdminSection({
     setIsSyncingGnuMembers(true);
     setConsoleLogs(prev => [...prev, `[GnuBoard API] 회원 조회 API 릴레이 요청 중: ${g5ApiUrl}`]);
     try {
-      const response = await fetch(g5ApiUrl, {
+      const response = await safeG5Fetch(g5ApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -743,7 +754,7 @@ export default function AdminSection({
     setIsSyncingGnuPosts(true);
     setConsoleLogs(prev => [...prev, `[GnuBoard API] g5_write_${boTable} 게시글 수신 요청 중...`]);
     try {
-      const response = await fetch(g5ApiUrl, {
+      const response = await safeG5Fetch(g5ApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -800,7 +811,7 @@ export default function AdminSection({
     if (!g5ApiUrl) return;
     setConsoleLogs(prev => [...prev, `[GnuBoard API] 회원 등급 업데이트(UPGRADE) 수신 통보 중: mb_id = ${mb_id}, level = ${targetLevel}`]);
     try {
-      const response = await fetch(g5ApiUrl, {
+      const response = await safeG5Fetch(g5ApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1588,13 +1599,6 @@ export default function AdminSection({
                               ) : (
                                 <>
                                   <span className="text-[10px] text-gray-405 font-semibold">처결 완료</span>
-                                  <button
-                                    onClick={() => handleWipeRecord(v.id)}
-                                    className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded ml-2 transition-all cursor-pointer"
-                                    title="기록 소거"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 inline" />
-                                  </button>
                                 </>
                               )}
                             </td>
@@ -1613,95 +1617,96 @@ export default function AdminSection({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left"
+                className="glass-card p-6 rounded-3xl border border-gray-100 text-left space-y-6"
               >
-                {/* Addition Form Column */}
-                <div className="lg:col-span-5 glass-card p-6 rounded-3xl border border-gray-100 space-y-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-100 pb-4 gap-2">
                   <div>
-                    <h4 className="text-sm font-extrabold text-gray-950 font-sans">수동 세무원장 영입 추가</h4>
-                    <p className="text-[11px] text-gray-400 mt-0.5">계좌 및 우편 수령으로 접수되어 국세청 가등록 심사를 집행할 자금을 추가합니다.</p>
+                    <h4 className="text-sm font-extrabold text-gray-950 font-sans">후원 원장 동정 관리 대장</h4>
+                    <p className="text-[11px] text-gray-400 mt-0.5">북민회 정착 기부금, 기업 연대 기탁금 현황 및 수탁 장부 전결 내역입니다.</p>
                   </div>
-
-                  <form onSubmit={handleAddDonation} className="space-y-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-500 mb-1">기여자/기수 단체명</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="예: 홍길림 / 민족통일단"
-                        value={newDonorName}
-                        onChange={(e) => setNewDonorName(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-gray-200 px-4 py-2.5 rounded-xl focus:border-blue-500 focus:outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-500 mb-1">원금 수선 (KRW, 원화 기준)</label>
-                      <input
-                        type="number"
-                        required
-                        placeholder="예: 100000"
-                        value={newDonorAmount}
-                        onChange={(e) => setNewDonorAmount(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-gray-200 px-4 py-2.5 rounded-xl focus:border-blue-500 focus:outline-none font-mono font-bold"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-500 mb-1">납입 수단</label>
-                      <select
-                        value={newDonorMethod}
-                        onChange={(e) => setNewDonorMethod(e.target.value)}
-                        className="w-full text-xs bg-slate-50 border border-gray-200 px-3 py-2.5 rounded-xl focus:border-blue-500 focus:outline-none"
-                      >
-                        <option value="계좌이체 (농협)">계좌이체 (농협은행)</option>
-                        <option value="신용카드">정기 자동화 카드 승인</option>
-                        <option value="해외송금">대북협조 기금 해외송금</option>
-                        <option value="직접 현금 기증">사무국 직접 내관 희사</option>
-                      </select>
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer flex items-center justify-center gap-1.5"
-                    >
-                      <FileSpreadsheet className="w-3.5 h-3.5" /> 원장 서류 추가 완료
-                    </button>
-                  </form>
+                  <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-2.5 py-1 rounded-md">
+                    기록 원장: {donations.length}건
+                  </span>
                 </div>
 
-                {/* Ledger Listing Column */}
-                <div className="lg:col-span-7 glass-card p-6 rounded-3xl border border-gray-100 flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-extrabold text-gray-950 font-sans">실시간 국세청 세원 연동 장부</h4>
-                      <p className="text-[11px] text-gray-400 mt-0.5">중앙 지정 회계 법인이 일괄 감사 소인하는 정비 장부 목록입니다.</p>
-                    </div>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left: Manual Entrance */}
+                  <div className="lg:col-span-4 bg-slate-50/50 p-5 border border-gray-150 rounded-2xl space-y-4">
+                    <h5 className="text-xs font-black text-gray-900 tracking-tight flex items-center gap-1">
+                      <span>✍️ 후원금 실물 수납 등록</span>
+                    </h5>
+                    <form onSubmit={handleAddDonation} className="space-y-3.5">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-gray-400 block">수탁 기부자명 / 단체명</label>
+                        <input
+                          type="text"
+                          required
+                          value={newDonorName}
+                          onChange={(e) => setNewDonorName(e.target.value)}
+                          placeholder="예: 홍길동"
+                          className="w-full bg-white border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
+                      </div>
 
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-gray-400 block">기탁 후원 금액(원)</label>
+                        <input
+                          type="number"
+                          required
+                          value={newDonorAmount}
+                          onChange={(e) => setNewDonorAmount(e.target.value)}
+                          placeholder="예: 50000"
+                          className="w-full bg-white border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-gray-400 block">납부 및 기탁 수단 방식</label>
+                        <select
+                          value={newDonorMethod}
+                          onChange={(e) => setNewDonorMethod(e.target.value)}
+                          className="w-full bg-white border border-gray-200 pl-2 pr-2 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        >
+                          <option value="계좌이체 (농협)">계좌이체 (농협)</option>
+                          <option value="신용카드">신용카드</option>
+                          <option value="해외송금">해외송금</option>
+                          <option value="직접기탁 (현물)">직접기탁 (현물)</option>
+                          <option value="ARS 후원">ARS 후원</option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer"
+                      >
+                        신규 기탁원장 영수 서명 등록
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Right: Donation List */}
+                  <div className="lg:col-span-8 space-y-3">
                     <div className="overflow-x-auto">
-                      <table className="w-full text-xs border-collapse">
+                      <table className="w-full text-xs text-left border-collapse">
                         <thead>
                           <tr className="border-b border-gray-200 text-gray-400 uppercase font-bold text-[10px]">
-                            <th className="py-2.5 px-2">기여 성명</th>
-                            <th className="py-2.5 px-2 text-right">납부 기금액</th>
-                            <th className="py-2.5 px-2 text-center">납입 수단</th>
-                            <th className="py-2.5 px-2 text-right">납입 일자</th>
+                            <th className="py-2.5 px-2">순번</th>
+                            <th className="py-2.5 px-2">기부자 실명</th>
+                            <th className="py-2.5 px-2">납부 기탁 수단</th>
+                            <th className="py-2.5 px-2">기부 후원 일품</th>
+                            <th className="py-2.5 px-2 text-right">기탁 금액원</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100 font-medium font-sans">
-                          {donations.map((d) => (
-                            <tr key={d.id} className="hover:bg-slate-50/30">
-                              <td className="py-3 px-2 font-bold text-gray-950 flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                {d.donorName}
-                              </td>
-                              <td className="py-3 px-2 text-right font-mono font-extrabold text-blue-650">
+                        <tbody className="divide-y divide-gray-100 font-medium">
+                          {donations.map((d, index) => (
+                            <tr key={d.id} className="hover:bg-slate-50/20 transition-colors">
+                              <td className="py-3 px-2 text-gray-400 font-mono font-bold">#{index + 1}</td>
+                              <td className="py-3 px-2 font-bold text-gray-900">{d.donorName}</td>
+                              <td className="py-3 px-2 text-gray-500 font-semibold">{d.paymentMethod}</td>
+                              <td className="py-3 px-2 text-gray-400 font-mono font-bold">{d.date}</td>
+                              <td className="py-3 px-2 text-right font-bold text-blue-600">
                                 {d.amount.toLocaleString()}원
                               </td>
-                              <td className="py-3 px-2 text-center text-gray-500 font-bold text-[10px]">
-                                {d.paymentMethod}
-                              </td>
-                              <td className="py-3 px-2 text-right text-gray-400 font-mono">{d.date}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -1718,118 +1723,156 @@ export default function AdminSection({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-6 text-left"
+                className="glass-card p-6 rounded-3xl border border-gray-100 text-left space-y-6"
               >
-                {/* GnuBoard direct configuration flags */}
-                <div className="lg:col-span-4 glass-card p-6 rounded-3xl border border-gray-100 space-y-4 flex flex-col justify-between">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-sm font-extrabold text-gray-950 font-sans">그누보드 CMS 환경 보디가드</h4>
-                      <p className="text-[11px] text-gray-400 mt-0.5">메인 PHP 프레임워크와의 실시간 인화 설정을 보위 제어합니다.</p>
-                    </div>
-
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between p-3 bg-slate-50/50 border border-gray-200/50 rounded-2xl">
-                        <div>
-                          <div className="text-xs font-bold text-gray-900">그누보드5 회신 동기화</div>
-                          <div className="text-[9px] text-gray-400 font-bold">gb5_member 자동 임포트</div>
-                        </div>
-                        <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-slate-50/50 border border-gray-200/50 rounded-2xl">
-                        <div>
-                          <div className="text-xs font-bold text-gray-900">자조 비공개 채널 등급 필터</div>
-                          <div className="text-[9px] text-gray-400 font-bold">g5_level 4 이상 강제 조치</div>
-                        </div>
-                        <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
-                      </div>
-
-                      <div className="flex items-center justify-between p-3 bg-slate-50/50 border border-gray-200/50 rounded-2xl">
-                        <div>
-                          <div className="text-xs font-bold text-gray-900">실시간 로그 암호화 아웃</div>
-                          <div className="text-[9px] text-gray-400 font-bold">256-bit AES 로컬 보위</div>
-                        </div>
-                        <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
-                      </div>
-                    </div>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-100 pb-4 gap-2">
+                  <div>
+                    <h4 className="text-sm font-extrabold text-gray-950 font-sans">통합 전산망 보안 필터 제어 센터</h4>
+                    <p className="text-[11px] text-gray-400 mt-0.5">그누보드5 프레임워크와의 양방향 원격 DB 및 동기화 필터 상태를 점검하고 자격 권한을 수정 제어합니다.</p>
                   </div>
-
-                  <div className="p-3 bg-teal-50 border border-teal-100 rounded-2xl">
-                    <span className="text-[9px] font-black text-teal-700 uppercase bg-teal-100 px-1.5 py-0.5 rounded">Security Alert</span>
-                    <p className="text-[10px] text-teal-800 leading-relaxed font-semibold mt-1">
-                      보안 인가 등급은 정밀 심사 서명 완료 처분 시에 한해 mb_level 3 이상 부여되므로 악의적 승인은 제어해 주십시오.
-                    </p>
-                  </div>
+                  <button
+                    onClick={handleSyncSettings}
+                    disabled={isSyncingSettings}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white font-extrabold text-xs rounded-xl shadow-sm cursor-pointer transition-all flex items-center gap-1 font-sans"
+                  >
+                    {isSyncingSettings ? '통합 동기화 테스트 중...' : '전산망 동기성 즉각 테스트 검증'}
+                  </button>
                 </div>
 
-                {/* DB Console Column */}
-                <div className="lg:col-span-8 bg-neutral-950 text-emerald-400 p-5 rounded-3xl font-mono text-xs border border-zinc-900 shadow-2xl flex flex-col justify-between space-y-4">
-                  <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
-                    <div className="flex items-center gap-1.5 text-zinc-300">
-                      <Database className="w-4 h-4 text-emerald-500 animate-pulse" />
-                      <span>MySQL Interactive Server Console (g5_bukmin)</span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setConsoleLogs([
-                          'Bukminhoe Admin Intranet v1.26 - RESTORED BUFFER',
-                          'Central GnuBoard Host: 127.0.0.1 on default 3306.',
-                          'State: READY.'
-                        ]);
-                      }}
-                      className="text-[10px] px-2 py-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 border border-zinc-800 rounded transition-all cursor-pointer"
-                    >
-                      Clear Log
-                    </button>
-                  </div>
-
-                  {/* Log console window with scroll */}
-                  <div className="h-[240px] overflow-y-auto space-y-2 select-text scrollbar-thin scrollbar-thumb-zinc-800 pr-2 pt-1 text-left">
-                    {consoleLogs.map((log, idx) => (
-                      <div key={idx} className="whitespace-pre-wrap leading-relaxed opacity-95">
-                        {log}
+                {/* Forms grid */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pb-2">
+                  <div className="lg:col-span-6 space-y-4">
+                    <span className="text-[11px] font-black text-gray-950 border-b pb-1.5 block">⚙️ API 연동 자격 원단 설계</span>
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold text-gray-400 block">그누보드 CMS API Endpoint URL</label>
+                        <input
+                          type="text"
+                          value={g5ApiUrl}
+                          onChange={(e) => setG5ApiUrl(e.target.value)}
+                          placeholder="https://your-gnuboard.com/api/sync.php"
+                          className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
                       </div>
-                    ))}
+
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-extrabold text-gray-400 block">그누보드 API 보안 Secret Key (Bearer Token)</label>
+                        <input
+                          type="password"
+                          value={g5ApiKey}
+                          onChange={(e) => setG5ApiKey(e.target.value)}
+                          placeholder="입력 보안"
+                          className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <span className="text-[11px] font-black text-gray-955 border-b pb-1.5 pt-2 block">🛢️ 원격 독립 MySQL 고정 연결 자격 설정</span>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-gray-400 block">DB 호스트 주소(Host IP)</label>
+                        <input
+                          type="text"
+                          value={g5DbHost}
+                          onChange={(e) => setG5DbHost(e.target.value)}
+                          placeholder="localhost"
+                          className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-gray-400 block">DB 명칭(Database Name)</label>
+                        <input
+                          type="text"
+                          value={g5DbName}
+                          onChange={(e) => setG5DbName(e.target.value)}
+                          placeholder="gnuboard5"
+                          className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-gray-400 block">DB 사용자 계정(User)</label>
+                        <input
+                          type="text"
+                          value={g5DbUser}
+                          onChange={(e) => setG5DbUser(e.target.value)}
+                          placeholder="root"
+                          className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[9px] font-bold text-gray-400 block">DB 접속 암호(Password)</label>
+                        <input
+                          type="password"
+                          value={g5DbPassword}
+                          onChange={(e) => setG5DbPassword(e.target.value)}
+                          placeholder="숨김 암호"
+                          className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {syncSettingsResult && (
+                      <div className={`p-3 rounded-xl border text-xs font-bold leading-normal ${
+                        syncSettingsResult.success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800'
+                      }`}>
+                        {syncSettingsResult.message}
+                      </div>
+                    )}
                   </div>
 
-                  {/* Query interactive form */}
-                  <form onSubmit={handleConsoleSubmit} className="flex gap-2">
-                    <span className="text-zinc-650 self-center font-bold font-mono">g5_db&gt;</span>
-                    <input
-                      type="text"
-                      required
-                      placeholder="SELECT * FROM users;  (또는 help 입력)"
-                      value={consoleQuery}
-                      onChange={(e) => setConsoleQuery(e.target.value)}
-                      className="flex-1 bg-neutral-900 border border-zinc-800 focus:border-emerald-500 pl-3 pr-4 py-2.5 rounded-xl text-emerald-300 focus:outline-none font-mono text-xs"
-                    />
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-neutral-950 rounded-xl font-mono text-xs font-bold cursor-pointer transition-colors"
-                    >
-                      EXECUTE
-                    </button>
-                  </form>
+                  <div className="lg:col-span-6 space-y-4">
+                    <span className="text-[11px] font-black text-gray-955 border-b pb-1.5 block">🛡️ 자동화 보안 및 격리 상태 정보</span>
+                    <div className="space-y-3 pt-1">
+                      <div className="flex items-center justify-between p-3 bg-slate-50/50 border border-gray-200/50 rounded-2xl">
+                        <div>
+                          <div className="text-xs font-bold text-gray-900 font-sans">그누보드5 회신 동기화</div>
+                          <div className="text-[9px] text-gray-400 font-bold tracking-tight">gb5_member 테이블 스트림 연공 자동 임포트</div>
+                        </div>
+                        <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-slate-50/50 border border-gray-200/50 rounded-2xl">
+                        <div>
+                          <div className="text-xs font-bold text-gray-900 font-sans">자조 비공개 채널 등급 필터</div>
+                          <div className="text-[9px] text-gray-400 font-bold tracking-tight">정회원(Level 3) 이상만 내부 자유자조방 조회 인가</div>
+                        </div>
+                        <input type="checkbox" defaultChecked className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50/50 p-4 border border-gray-150 rounded-2xl space-y-1.5">
+                      <span className="text-[9px] font-black text-blue-600 tracking-wide uppercase font-mono">자동 밴 시스템</span>
+                      <h5 className="font-bold text-gray-900 text-xs font-sans">무차별 패킷 인젝션 자동 제어</h5>
+                      <p className="text-[10.5px] text-gray-500 leading-normal">
+                        Bearer 인증 키 검증 시 비인가 패킷이 1분당 100회 이상 연속 유입될 시 해당 발신 원격 아파치 호스트명을 3시간 동안 자동 격리 수용합니다.
+                      </p>
+                    </div>
+
+                    <div className="bg-slate-50/50 p-4 border border-gray-150 rounded-2xl space-y-1.5">
+                      <span className="text-[9px] font-black text-purple-600 tracking-wide uppercase font-mono font-sans font-semibold">원격 제어 등급</span>
+                      <h5 className="font-bold text-gray-900 text-xs font-sans">양방향 API 등급 필터 최적화</h5>
+                      <p className="text-[10.5px] text-gray-500 leading-normal">
+                        회원 등급 조정, 정회원 심사 서류 자동 검인, 임기 정산 등 민감한 원장 수정 API는 그누보드의 Level 10 최고 관리국 세션 권한이 부여된 연결에서만 수립됩니다.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
 
             {activeAdminSubTab === 'homepage' && (
               <motion.div
-                key="homepage-cms"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                className="space-y-6 text-left"
+                key="homepage"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="space-y-6"
               >
-                {/* Visual Header */}
-                <div className="glass-card p-6 rounded-3xl border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b pb-4 text-left">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] uppercase font-black tracking-widest text-blue-600 bg-blue-50 px-2 py-0.5 rounded">Website CMS</span>
-                      <span className="text-[9px] text-gray-400 font-bold">인트라넷 동기화 가동 중</span>
-                    </div>
                     <h3 className="text-xl font-extrabold text-gray-950 mt-1">실시간 비주얼 &amp; 핵심 문구 기획관</h3>
                     <p className="text-xs text-gray-400">메인 슬라이드 배너, 단체 인사말, 주요 수탁 사업 등 대고객 서비스 영역을 자율 심의 하에 수치 조정합니다.</p>
                   </div>
@@ -1889,82 +1932,107 @@ export default function AdminSection({
 
                 {/* Sub Tab: HERO EDITOR */}
                 {cmsSubTab === 'hero' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {heroSlides.map((slide, sIdx) => (
-                      <div key={slide.id} className="glass-card p-5 rounded-3xl border border-gray-100 bg-white space-y-4 flex flex-col justify-between">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between border-b pb-2">
-                            <span className="text-xs font-black text-gray-800 flex items-center gap-1.5">
-                              <span className="w-5 h-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center font-mono text-[10px] font-black">{sIdx+1}</span>
-                              홈페이지 배너 #{slide.id}
-                            </span>
-                            <span className="text-[10px] text-gray-400 font-bold font-mono">Status: ACTIVE</span>
-                          </div>
-                          
-                          {/* Banner preview block */}
-                          <div className="relative h-24 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
-                            <img src={slide.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover brightness-[0.7]" referrerPolicy="no-referrer" />
-                            <div className="relative text-center p-2 text-white space-y-0.5">
-                              <span className="text-[8px] font-extrabold uppercase bg-blue-600/90 text-white px-2 py-0.5 rounded-full">{slide.badge || 'No Badge'}</span>
-                              <h5 className="text-[10px] font-bold line-clamp-1 whitespace-pre-line">{slide.title || 'No Title'}</h5>
-                              <p className="text-[8px] opacity-75 line-clamp-1">{slide.subTitle || 'No Description'}</p>
-                            </div>
-                          </div>
+                  <div className="space-y-6 col-span-full text-left">
+                    {/* Visual Launcher Banner for the custom page */}
+                    <div className="glass-card p-6 rounded-3xl border border-blue-200 bg-blue-50/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <div className="space-y-1">
+                        <h4 className="text-sm font-extrabold text-blue-900 flex items-center gap-1.5 font-sans">
+                          <Sparkles className="w-4 h-4 text-blue-600 animate-pulse" />
+                          홈페이지 메인 롤링 배너 전용 교체페이지 기능 탑재 완료
+                        </h4>
+                        <p className="text-[11px] text-gray-500 leading-relaxed font-semibold font-sans">
+                          지정한 뱃지, 제목 텍스트, 하단 설명글 뿐만 아니라 안심 고화질 프리셋 라이브러리 및 커스텀 인터넷 이미지 URL 교정, 슬라이드 배너 추가/삭제, 노출 순서 교정이 결합된 전용 교체 페이지 도구를 즉각 기동할 수 있습니다.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const triggerEvent = new CustomEvent('open-hero-banner-editor');
+                          window.dispatchEvent(triggerEvent);
+                        }}
+                        className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs shadow-md transition-transform hover:-translate-y-0.5 flex items-center gap-1.5 shrink-0 self-start sm:self-center cursor-pointer font-sans"
+                      >
+                        <Image className="w-4 h-4 text-white" />
+                        <span>전용 슬라이드 교체기 실행</span>
+                      </button>
+                    </div>
 
-                          <div className="space-y-3 pt-1">
-                            {/* Input: Badge */}
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">상단 고정 뱃지</label>
-                              <input 
-                                type="text"
-                                className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
-                                value={slide.badge}
-                                onChange={(e) => {
-                                  const updatedBadge = e.target.value;
-                                  if (setHeroSlides) {
-                                    setHeroSlides(prev => prev.map(s => s.id === slide.id ? { ...s, badge: updatedBadge } : s));
-                                  }
-                                }}
-                              />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {heroSlides.map((slide, sIdx) => (
+                        <div key={slide.id} className="glass-card p-5 rounded-3xl border border-gray-100 bg-white space-y-4 flex flex-col justify-between">
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between border-b pb-2">
+                              <span className="text-xs font-black text-gray-800 flex items-center gap-1.5">
+                                <span className="w-5 h-5 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center font-mono text-[10px] font-black">{sIdx+1}</span>
+                                홈페이지 배너 #{slide.id}
+                              </span>
+                              <span className="text-[10px] text-gray-400 font-bold font-mono">Status: ACTIVE</span>
                             </div>
-
-                            {/* Input: Title */}
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">메인 타이틀 문구 (줄바꿈 \n 사용)</label>
-                              <textarea 
-                                className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none min-h-[50px] font-sans"
-                                value={slide.title}
-                                onChange={(e) => {
-                                  const updatedTitle = e.target.value;
-                                  if (setHeroSlides) {
-                                    setHeroSlides(prev => prev.map(s => s.id === slide.id ? { ...s, title: updatedTitle } : s));
-                                  }
-                                }}
-                              />
+                            
+                            {/* Banner preview block */}
+                            <div className="relative h-24 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex items-center justify-center">
+                              <img src={slide.imageUrl} alt="" className="absolute inset-0 w-full h-full object-cover brightness-[0.7]" referrerPolicy="no-referrer" />
+                              <div className="relative text-center p-2 text-white space-y-0.5">
+                                <span className="text-[8px] font-extrabold uppercase bg-blue-600/90 text-white px-2 py-0.5 rounded-full">{slide.badge || 'No Badge'}</span>
+                                <h5 className="text-[10px] font-bold line-clamp-1 whitespace-pre-line">{slide.title || 'No Title'}</h5>
+                                <p className="text-[8px] opacity-75 line-clamp-1">{slide.subTitle || 'No Description'}</p>
+                              </div>
                             </div>
 
-                            {/* Input: Subtitle */}
-                            <div className="space-y-1">
-                              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">서브 해설 상세 문구</label>
-                              <input 
-                                type="text"
-                                className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
-                                value={slide.subTitle}
-                                onChange={(e) => {
-                                  const updatedSub = e.target.value;
-                                  if (setHeroSlides) {
-                                    setHeroSlides(prev => prev.map(s => s.id === slide.id ? { ...s, subTitle: updatedSub } : s));
-                                  }
-                                }}
-                              />
+                            <div className="space-y-3 pt-1">
+                              {/* Input: Badge */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">상단 고정 뱃지</label>
+                                <input 
+                                  type="text"
+                                  className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                                  value={slide.badge}
+                                  onChange={(e) => {
+                                    const updatedBadge = e.target.value;
+                                    if (setHeroSlides) {
+                                      setHeroSlides(prev => prev.map(s => s.id === slide.id ? { ...s, badge: updatedBadge } : s));
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              {/* Input: Title */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">메인 타이틀 문구 (줄바꿈 \n 사용)</label>
+                                <textarea 
+                                  className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none min-h-[50px] font-sans"
+                                  value={slide.title}
+                                  onChange={(e) => {
+                                    const updatedTitle = e.target.value;
+                                    if (setHeroSlides) {
+                                      setHeroSlides(prev => prev.map(s => s.id === slide.id ? { ...s, title: updatedTitle } : s));
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              {/* Input: Subtitle */}
+                              <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block">서브 해설 상세 문구</label>
+                                <input 
+                                  type="text"
+                                  className="w-full bg-slate-50/50 border border-gray-200 focus:border-blue-500 pl-3 pr-3 py-1.5 rounded-xl text-xs text-gray-800 font-bold focus:outline-none"
+                                  value={slide.subTitle}
+                                  onChange={(e) => {
+                                    const updatedSub = e.target.value;
+                                    if (setHeroSlides) {
+                                      setHeroSlides(prev => prev.map(s => s.id === slide.id ? { ...s, subTitle: updatedSub } : s));
+                                    }
+                                  }}
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
-
                 {/* Sub Tab: ABOUT EDITOR */}
                 {cmsSubTab === 'about' && aboutGreeting && (
                   <div className="glass-card p-6 rounded-3xl border border-gray-100 bg-white space-y-6">

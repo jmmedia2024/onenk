@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { HeroSlide, AboutGreeting, ProjectItem, AboutPurpose, AboutOrgCustom, AboutLocation } from './types';
+import { safeG5Fetch } from './utils/g5Api';
 import { 
   Users, 
   Shield, 
@@ -49,6 +50,7 @@ import VideoShowcase from './components/VideoShowcase';
 import MainHeroSlider from './components/MainHeroSlider';
 import G5IntegrationCenterModal from './components/G5IntegrationCenterModal';
 import AssociationLogo from './components/AssociationLogo';
+import HeroBannerEditorModal from './components/HeroBannerEditorModal';
 
 type ActiveTab = 'home' | 'about' | 'projects' | 'news' | 'community' | 'donation' | 'dev' | 'admin';
 
@@ -510,6 +512,8 @@ export default function App() {
     ];
   });
 
+  const [isBannerModalOpen, setIsBannerModalOpen] = useState(false);
+
   // GnuBoard G5 Integration Center States
   const [isG5IntegratorOpen, setIsG5IntegratorOpen] = useState(false);
   const [g5ApiUrl, setG5ApiUrl] = useState<string>(() => {
@@ -519,7 +523,12 @@ export default function App() {
       localStorage.setItem('bukmin_g5_api_url', envUrl);
       return envUrl;
     }
-    return stored || envUrl || 'http://onenk.kr/g5/sync_bridge.php';
+    if (!stored || stored.endsWith('sync_bridge.php')) {
+      const activeUrl = 'http://onenk.kr/g5/g5_sync_bridge.php';
+      localStorage.setItem('bukmin_g5_api_url', activeUrl);
+      return activeUrl;
+    }
+    return stored || envUrl || 'http://onenk.kr/g5/g5_sync_bridge.php';
   });
   const [g5ApiKey, setG5ApiKey] = useState<string>(() => {
     return localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
@@ -664,6 +673,12 @@ export default function App() {
   }, [heroSlides]);
 
   useEffect(() => {
+    const handleOpenBanner = () => setIsBannerModalOpen(true);
+    window.addEventListener('open-hero-banner-editor', handleOpenBanner);
+    return () => window.removeEventListener('open-hero-banner-editor', handleOpenBanner);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('bukmin_about_greeting', JSON.stringify(aboutGreeting));
   }, [aboutGreeting]);
 
@@ -736,13 +751,17 @@ export default function App() {
   useEffect(() => {
     if (isG5LiveAuth && !isLoggedIn) {
       const checkG5Session = async () => {
-        const url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/sync_bridge.php';
+        let url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php';
+        if (url.endsWith('/sync_bridge.php')) {
+          url = url.replace('/sync_bridge.php', '/g5_sync_bridge.php');
+          localStorage.setItem('bukmin_g5_api_url', url);
+        }
         const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
         const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
         const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
 
         try {
-          const response = await fetch(url, {
+          const response = await safeG5Fetch(url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -784,14 +803,14 @@ export default function App() {
     setIsAuthLoggingIn(true);
     setAuthErrorMsg('');
 
-    const url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/sync_bridge.php';
+    const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
     const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
     
     const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
     const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
 
     try {
-      const response = await fetch(url, {
+      const response = await safeG5Fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -909,7 +928,7 @@ export default function App() {
     setRegisterErrorMsg('');
     setIsRegisterSuccess(false);
 
-    const url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/sync_bridge.php';
+    const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
     const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
     
     const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
@@ -918,7 +937,7 @@ export default function App() {
     const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
 
     try {
-      const response = await fetch(url, {
+      const response = await safeG5Fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1013,7 +1032,7 @@ export default function App() {
     setProfileSaveError('');
     setProfileSaveSuccess(false);
 
-    const url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/sync_bridge.php';
+    const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
     const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
     
     const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
@@ -1022,7 +1041,7 @@ export default function App() {
     const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
 
     try {
-      const response = await fetch(url, {
+      const response = await safeG5Fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1165,10 +1184,10 @@ export default function App() {
     // Clear standard active session
     if (isG5LiveAuth) {
       const logoutG5Session = async () => {
-        const url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/sync_bridge.php';
+        const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
         const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
         try {
-          await fetch(url, {
+          await safeG5Fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
             body: JSON.stringify({ action: 'check_session_logout' }) // optional endpoint trigger
@@ -1466,6 +1485,7 @@ export default function App() {
             onNavigateTo={(tab) => navigateTo(tab)} 
             slides={heroSlides} 
             onOpenG5Settings={() => setIsG5IntegratorOpen(true)} 
+            onOpenBannerEditor={() => setIsBannerModalOpen(true)}
           />
         </div>
       )}
@@ -2179,6 +2199,14 @@ export default function App() {
         setG5DbUser={setG5DbUser}
         g5DbPassword={g5DbPassword}
         setG5DbPassword={setG5DbPassword}
+      />
+
+      {/* 메인배너 슬라이드 교체 관리 모달 */}
+      <HeroBannerEditorModal
+        isOpen={isBannerModalOpen}
+        onClose={() => setIsBannerModalOpen(false)}
+        slides={heroSlides}
+        onSaveSlides={(updated) => setHeroSlides(updated)}
       />
 
       {/* User GnuBoard Profile Sync Modifier Modal */}

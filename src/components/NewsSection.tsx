@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { Camera, Newspaper, Calendar, ArrowUpRight, Search, Eye, X, Layers, Share2, Link2, MessageCircle } from 'lucide-react';
 
 interface GalleryItem {
@@ -152,7 +153,7 @@ export default function NewsSection() {
 
       try {
         // 1. Fetch news board posts (공식 보도자료)
-        const newsResponse = await fetch(g5ApiUrl, {
+        const newsResponse = await safeG5Fetch(g5ApiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -169,7 +170,7 @@ export default function NewsSection() {
 
         // 2. Fetch gallery board posts (활동 갤러리)
         const customGalleryTable = localStorage.getItem('bukmin_g5_gallery_board') || 'gallery';
-        const galleryResponse = await fetch(g5ApiUrl, {
+        const galleryResponse = await safeG5Fetch(g5ApiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

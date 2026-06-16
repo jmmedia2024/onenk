@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { Copy, Check, Database, FileCode, Server, Terminal, HelpCircle, RefreshCw, Send, AlertTriangle, CheckCircle, Sliders, Globe, Lock } from 'lucide-react';
 import { DeveloperSnippet } from '../types';
 
@@ -73,7 +74,7 @@ export default function DevCenter() {
 
     // 🌐 Actual Live fetch method to target GnuBoard database
     try {
-      const response = await fetch(g5ApiUrl, {
+      const response = await safeG5Fetch(g5ApiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

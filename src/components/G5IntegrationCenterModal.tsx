@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   X, 
@@ -163,7 +164,7 @@ export default function G5IntegrationCenterModal({
     }
 
     try {
-      const response = await fetch(localUrl, {
+      const response = await safeG5Fetch(localUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -253,7 +254,7 @@ export default function G5IntegrationCenterModal({
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), 6000); // 6 Sec timeout
 
-      const res = await fetch(localUrl, {
+      const res = await safeG5Fetch(localUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

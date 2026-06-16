@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { 
   Users, 
   Activity, 
@@ -211,7 +212,7 @@ export default function GnuBoardLiveDashboard({
     // 🌐 REAL LIVE FETCH NETWORK TRANSACTION
     setIsLoading(true);
     try {
-      const response = await fetch(url, {
+      const response = await safeG5Fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

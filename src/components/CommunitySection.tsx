@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles, Share2, Link2, MessageCircle, X, AlertCircle, Shield, Award, User } from 'lucide-react';
 import { Post, Comment } from '../types';
 
@@ -294,7 +295,7 @@ export default function CommunitySection({
 
       const startTime = performance.now();
 
-      const response = await fetch(url, {
+      const response = await safeG5Fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -451,7 +452,7 @@ export default function CommunitySection({
 
       const startTime = performance.now();
 
-      const response = await fetch(url, {
+      const response = await safeG5Fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

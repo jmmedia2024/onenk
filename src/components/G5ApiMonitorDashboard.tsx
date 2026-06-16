@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { safeG5Fetch } from '../utils/g5Api';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Terminal, 
@@ -223,7 +224,7 @@ export default function G5ApiMonitorDashboard({
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3500);
 
-        const res = await fetch(g5ApiUrl, {
+        const res = await safeG5Fetch(g5ApiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
