@@ -114,18 +114,6 @@ export default function MainHeroSlider({ onNavigateTo, slides: externalSlides, o
               <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
               <span>실시간 정착 공헌 지수 공시 활성</span>
             </div>
-
-            {onOpenBannerEditor && (
-              <button
-                type="button"
-                onClick={onOpenBannerEditor}
-                className="flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs hover:shadow-sm rounded-full transition-all cursor-pointer border border-blue-500 animate-pulse"
-                title="슬라이드 교체 관리자 도구 열기"
-              >
-                <ImageIcon className="w-3.5 h-3.5 text-white" />
-                <span>🖼️ 메인 배너 슬라이드 교체 관리</span>
-              </button>
-            )}
           </div>
 
           {/* Slide Navigation Overlay Controls on the Top Right */}

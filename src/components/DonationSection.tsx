@@ -14,23 +14,33 @@ export default function DonationSection() {
 
   const [copiedBank, setCopiedBank] = useState(false);
 
-  // Prepopulate standard database in localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('bukmin_donations_v1');
-    if (saved) {
-      setPledges(JSON.parse(saved));
-    } else {
-      const initialPledges: DonationPledge[] = [
-        { id: 'don-1', name: '이민규 회원', amount: 50000, type: 'monthly', paymentMethod: 'bank', message: '통일 여정의 주도적 기여자가 된 것을 자부하며 작게나마 보탬이 됩니다.', date: '2026-06-12' },
-        { id: 'don-2', name: '박사랑 대표', amount: 300000, type: 'once', paymentMethod: 'card', message: '탈북민 34,000여 명의 튼튼한 보금자리가 되어 준 북민회에 온 맘 다해 봉사합니다.', date: '2026-06-11' },
-        { id: 'don-3', name: '강석주 후원인', amount: 10000, type: 'monthly', paymentMethod: 'bank', message: '작은 정성이 큰 꿈이 되길 응원합고 기대합니다.', date: '2026-06-08' }
-      ];
-      localStorage.setItem('bukmin_donations_v1', JSON.stringify(initialPledges));
-      setPledges(initialPledges);
+  // Fetch real donations from SQL Database
+  const fetchPledges = async () => {
+    try {
+      const res = await fetch('/api/donations');
+      const data = await res.json();
+      if (data.success && data.donations) {
+        const mapped: DonationPledge[] = data.donations.map((d: any) => ({
+          id: d.id,
+          name: d.donorName,
+          amount: Number(d.amount),
+          type: d.isRegular ? 'monthly' : 'once',
+          paymentMethod: d.paymentMethod === '신용카드' ? 'card' : 'bank',
+          message: d.message || '',
+          date: d.date
+        }));
+        setPledges(mapped);
+      }
+    } catch (err) {
+      console.error('Error fetching real donations:', err);
     }
+  };
+
+  useEffect(() => {
+    fetchPledges();
   }, []);
 
-  const handlePledgeSubmit = (e: React.FormEvent) => {
+  const handlePledgeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!donorName.trim()) return;
 
@@ -40,27 +50,49 @@ export default function DonationSection() {
       return;
     }
 
-    const pledgeItem: DonationPledge = {
-      id: `pledge-${Date.now()}`,
-      name: donorName,
+    const payload = {
+      donorName: donorName.trim(),
       amount: finalAmount,
-      type: donateType,
-      paymentMethod,
-      message: cheerMessage,
-      date: new Date().toISOString().split('T')[0]
+      paymentMethod: paymentMethod === 'card' ? '신용카드' : '계좌이체 (농협)',
+      message: cheerMessage.trim(),
+      isRegular: donateType === 'monthly' ? 1 : 0
     };
 
-    const updated = [pledgeItem, ...pledges];
-    localStorage.setItem('bukmin_donations_v1', JSON.stringify(updated));
-    setPledges(updated);
-    
-    // Set for certificate rendering
-    setCompletedPledge(pledgeItem);
+    try {
+      const res = await fetch('/api/donations/apply', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        const pledgeItem: DonationPledge = {
+          id: `pledge-${Date.now()}`,
+          name: donorName.trim(),
+          amount: finalAmount,
+          type: donateType,
+          paymentMethod,
+          message: cheerMessage.trim(),
+          date: new Date().toISOString().split('T')[0]
+        };
 
-    // Reset fields
-    setDonorName('');
-    setCustomAmount('');
-    setCheerMessage('');
+        setCompletedPledge(pledgeItem);
+        fetchPledges(); // Refresh list immediately from database!
+
+        // Reset fields
+        setDonorName('');
+        setCustomAmount('');
+        setCheerMessage('');
+      } else {
+        alert(data.message || '후원 약정 저장 실패');
+      }
+    } catch (err) {
+      console.error('Pledge submit error:', err);
+      alert('서버와의 통신에 장애가 발생했습니다.');
+    }
   };
 
   const copyBankAccount = () => {

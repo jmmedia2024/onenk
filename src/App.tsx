@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { HeroSlide, AboutGreeting, ProjectItem, AboutPurpose, AboutOrgCustom, AboutLocation } from './types';
 import { safeG5Fetch } from './utils/g5Api';
+import { bukminApi } from './utils/bukminApi';
 import { 
   Users, 
   Shield, 
@@ -48,6 +49,7 @@ import AdminSection from './components/AdminSection';
 import MainSlideBanner from './components/MainSlideBanner';
 import VideoShowcase from './components/VideoShowcase';
 import MainHeroSlider from './components/MainHeroSlider';
+import { PartnerSlide } from './components/PartnerSlide';
 import G5IntegrationCenterModal from './components/G5IntegrationCenterModal';
 import AssociationLogo from './components/AssociationLogo';
 import HeroBannerEditorModal from './components/HeroBannerEditorModal';
@@ -747,95 +749,37 @@ export default function App() {
   const [registerErrorMsg, setRegisterErrorMsg] = useState('');
   const [isRegisterSuccess, setIsRegisterSuccess] = useState(false);
 
-  // Auto recovery from active GnuBoard session on mount
+  // Auto recovery from active session on mount
   useEffect(() => {
-    if (isG5LiveAuth && !isLoggedIn) {
-      const checkG5Session = async () => {
-        let url = localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php';
-        if (url.endsWith('/sync_bridge.php')) {
-          url = url.replace('/sync_bridge.php', '/g5_sync_bridge.php');
-          localStorage.setItem('bukmin_g5_api_url', url);
-        }
-        const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
-        const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
-        const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
-
-        try {
-          const response = await safeG5Fetch(url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-              action: 'check_session',
-              db_host,
-              db_name
-            })
-          });
-          if (response.ok) {
-            const result = await response.json();
-            if (result.status === 'success' && result.session_active && result.data) {
-              const mem = result.data;
-              handleLoginSuccess({
-                id: mem.mb_id,
-                name: mem.mb_name || mem.mb_nick || mem.mb_id,
-                role: Number(mem.mb_level) >= 10 ? '최고 관리자' : Number(mem.mb_level) >= 4 ? '게시판장' : '공식 정회원',
-                nick: mem.mb_nick || '',
-                tel: mem.mb_tel || '',
-                email: mem.mb_email || '',
-                point: Number(mem.mb_point) || 0,
-                joinedAt: mem.mb_datetime || '',
-                todayLogin: mem.mb_today_login || ''
-              });
-            }
-          }
-        } catch (e) {
-          console.warn('GnuBoard session recovery skipped:', e);
-        }
-      };
-      checkG5Session();
+    const storedLoggedIn = localStorage.getItem('bukmin_is_logged_in') === 'true';
+    const storedProfile = localStorage.getItem('bukmin_user_profile');
+    if (storedLoggedIn && storedProfile) {
+      try {
+        const parsed = JSON.parse(storedProfile);
+        setUserProfile(parsed);
+        setIsLoggedIn(true);
+      } catch (e) {
+        console.warn('Profile parse error:', e);
+      }
     }
-  }, [isG5LiveAuth, isLoggedIn]);
+  }, []);
 
-  // Real-time remote GnuBoard password/session check
+  // Real-time remote login check
   const loginWithGnuBoard = async (mb_id: string, mb_pw: string) => {
     setIsAuthLoggingIn(true);
     setAuthErrorMsg('');
 
-    const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
-    const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
-    
-    const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
-    const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
-
     try {
-      const response = await safeG5Fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          action: 'verify_member_login',
-          mb_id: mb_id,
-          mb_password: mb_pw,
-          db_host,
-          db_name
-        })
-      });
-
-      const result = await response.json();
+      const result = await bukminApi.login(mb_id, mb_pw);
       setIsAuthLoggingIn(false);
 
-      if (!response.ok || result.status !== 'success') {
-        const errMsg = result.message || '인증 처리에 실패하였습니다. 아이디와 패스워드를 확인해 주십시오.';
-        setAuthErrorMsg(errMsg);
+      if (!result.success) {
+        setAuthErrorMsg(result.message || '인증 처리에 실패하였습니다. 아이디와 패스워드를 확인해 주십시오.');
         return false;
       }
 
-      if (result.data) {
-        const mem = result.data;
+      if (result.member) {
+        const mem = result.member;
         const profile = {
           id: mem.mb_id,
           name: mem.mb_name || mem.mb_nick || mem.mb_id,
@@ -853,69 +797,12 @@ export default function App() {
       return false;
     } catch (e: any) {
       setIsAuthLoggingIn(false);
-      const errText = e.message || '네트워크 통신 오류가 발생했습니다.';
-      console.warn('GnuBoard remote login failed, falling back to secure sandbox:', e);
-      
-      // Fallback to local sandbox matching so users do not see blocking errors
-      const storedGnu = localStorage.getItem('bukmin_gnu_members');
-      const membersList = storedGnu ? JSON.parse(storedGnu) : [];
-      const foundMember = membersList.find((m: any) => m.mb_id.toLowerCase() === mb_id.toLowerCase());
-      
-      const localPasswords = localStorage.getItem('bukmin_gnu_local_pwd') || '{}';
-      const pwdMap = JSON.parse(localPasswords);
-      const savedPwd = pwdMap[mb_id];
-
-      // Default sandbox admin and test accounts
-      const defaultUsers: Record<string, string> = {
-        'admin': 'admin123',
-        'officer': 'officer123',
-        'user1': 'user123',
-        'gildong': 'gildong123'
-      };
-
-      if (foundMember) {
-        if (savedPwd && savedPwd !== mb_pw) {
-          setAuthErrorMsg('비밀번호가 일치하지 않습니다 (로컬 보안 대조).');
-          return false;
-        }
-        
-        // Success fallback login
-        const profile = {
-          id: foundMember.mb_id,
-          name: foundMember.mb_name || foundMember.mb_nick || foundMember.mb_id,
-          role: Number(foundMember.mb_level) >= 10 ? '최고 관리자' : Number(foundMember.mb_level) >= 4 ? '게시판장' : '공식 정회원',
-          nick: foundMember.mb_nick || '',
-          tel: foundMember.mb_tel || ''
-        };
-        
-        alert(`📱 [알림 - 안전 폴백 접속] 외부 서버와의 통신 지연(Mixed Content 보안 정책 또는 서버 일시 오프라인)으로 인해, 로컬 샌드박스 데이터베이스 백업 정보와 일치 여부를 판독하여 인증서 발급(안전 로그인)을 하였습니다.`);
-        triggerLoginWithAnim(profile);
-        return true;
-      } else if (defaultUsers[mb_id.toLowerCase()]) {
-        if (defaultUsers[mb_id.toLowerCase()] !== mb_pw) {
-          setAuthErrorMsg('비밀번호가 일치하지 않습니다 (로컬 디폴트 계정).');
-          return false;
-        }
-        
-        const profile = {
-          id: mb_id,
-          name: mb_id === 'admin' ? '운영본부장' : mb_id === 'officer' ? '복지행정처장' : '통일정착회원',
-          role: mb_id === 'admin' ? '최고 관리자' : mb_id === 'officer' ? '게시판장' : '공식 정회원',
-          nick: mb_id === 'admin' ? '어드민천사' : mb_id === 'officer' ? '복지천사' : '평화통일원',
-          tel: '010-1234-5678'
-        };
-        
-        alert(`📱 [알림 - 안전 데모 계정 접속] 원격 서버가 통신 허용 범위 외 상태입니다. 로컬 샌드박스의 사전 승인된 데모 계정(${mb_id}) 정보로 실시간 검증을 우회하여 즉시 정회원 포털 로그인을 인증하였습니다.`);
-        triggerLoginWithAnim(profile);
-        return true;
-      }
-
-      setAuthErrorMsg(`[원격지 서버 비접근성] JM API CORS 또는 네트워크가 오프라인 환경(${errText})이며, 입력하신 아이디 '${mb_id}' 역시 로컬 브라우저 백업 보관소에 발견되지 않습니다. 간편 회원가입 탭을 열어 1초 회원 가입 즉시 로그인이 가능합니다.`);
+      setAuthErrorMsg(e.message || '로그인 도중 서버 통신 오류가 발생했습니다.');
       return false;
     }
   };
 
-  // Real-time remote GnuBoard registration sync
+  // Real-time registration
   const registerWithGnuBoard = async (memberData: {
     mb_id: string;
     mb_pw: string;
@@ -928,42 +815,19 @@ export default function App() {
     setRegisterErrorMsg('');
     setIsRegisterSuccess(false);
 
-    const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
-    const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
-    
-    const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
-    const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
-    const db_user = localStorage.getItem('bukmin_g5_db_user') || 'g5_db_user';
-    const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
-
     try {
-      const response = await safeG5Fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          action: 'register_member',
-          db_host,
-          db_name,
-          db_user,
-          db_password,
-          mb_id: memberData.mb_id,
-          mb_password: memberData.mb_pw,
-          mb_name: memberData.mb_name,
-          mb_nick: memberData.mb_nick,
-          mb_email: memberData.mb_email,
-          mb_tel: memberData.mb_tel
-        })
+      const result = await bukminApi.register({
+        mb_id: memberData.mb_id,
+        mb_password: memberData.mb_pw,
+        mb_name: memberData.mb_name,
+        mb_nick: memberData.mb_nick,
+        mb_email: memberData.mb_email,
+        mb_tel: memberData.mb_tel
       });
-
-      const result = await response.json();
       setIsAuthRegistering(false);
 
-      if (!response.ok || result.status !== 'success') {
-        const errMsg = result.message || '회원가입 동기화 도중 데이터 오류가 발생하였습니다.';
-        setRegisterErrorMsg(errMsg);
+      if (!result.success) {
+        setRegisterErrorMsg(result.message || '회원가입 도중 데이터 오류가 발생하였습니다.');
         return false;
       }
 
@@ -977,94 +841,28 @@ export default function App() {
 
       return true;
     } catch (e: any) {
-      // Offline/Local Simulation Fallback
-      console.warn('GnuBoard remote registration failed. Applying sandbox simulation:', e);
-      
-      const storedGnu = localStorage.getItem('bukmin_gnu_members');
-      let membersList = storedGnu ? JSON.parse(storedGnu) : [];
-
-      if (membersList.some((m: any) => m.mb_id.toLowerCase() === memberData.mb_id.toLowerCase())) {
-        setIsAuthRegistering(false);
-        setRegisterErrorMsg('이미 가입된 회원의 로그인 ID입니다.');
-        return false;
-      }
-
-      if (membersList.some((m: any) => m.mb_nick === memberData.mb_nick)) {
-        setIsAuthRegistering(false);
-        setRegisterErrorMsg('이미 사용 중인 닉네임입니다.');
-        return false;
-      }
-
-      const newMember = {
-        mb_id: memberData.mb_id,
-        mb_name: memberData.mb_name,
-        mb_nick: memberData.mb_nick,
-        mb_level: 2,
-        mb_email: memberData.mb_email,
-        mb_tel: memberData.mb_tel,
-        mb_datetime: new Date().toISOString().replace('T', ' ').substring(0, 19)
-      };
-
-      membersList.unshift(newMember);
-      localStorage.setItem('bukmin_gnu_members', JSON.stringify(membersList));
-
-      // Store password natively in local simulation store
-      const localPasswords = localStorage.getItem('bukmin_gnu_local_pwd') || '{}';
-      const pwdMap = JSON.parse(localPasswords);
-      pwdMap[memberData.mb_id] = memberData.mb_pw;
-      localStorage.setItem('bukmin_gnu_local_pwd', JSON.stringify(pwdMap));
-
       setIsAuthRegistering(false);
-      setIsRegisterSuccess(true);
-      
-      setTimeout(() => {
-        setIsRegisterSuccess(false);
-        setAuthTab('login');
-      }, 1500);
-
-      return true;
+      setRegisterErrorMsg(e.message || '가입 도중 서버와의 연결 오류가 발생했습니다.');
+      return false;
     }
   };
 
-  // Real-time remote GnuBoard profile update sync
+  // Real-time profile update
   const saveProfileWithGnuBoard = async (mb_id: string, newNick: string, newTel: string) => {
     setIsProfileSaving(true);
     setProfileSaveError('');
     setProfileSaveSuccess(false);
 
-    const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
-    const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
-    
-    const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
-    const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
-    const db_user = localStorage.getItem('bukmin_g5_db_user') || 'g5_db_user';
-    const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
-
     try {
-      const response = await safeG5Fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          action: 'update_member_profile',
-          db_host,
-          db_name,
-          db_user,
-          db_password,
-          mb_id,
-          mb_nick: newNick,
-          mb_tel: newTel
-        })
+      const result = await bukminApi.editProfile({
+        mb_id,
+        mb_nick: newNick,
+        mb_tel: newTel
       });
-
-      const result = await response.json();
       setIsProfileSaving(false);
 
-      if (!response.ok || result.status !== 'success') {
-        const errMsg = result.message || '프로필 정보 동기화에 실패했습니다.';
-        setProfileSaveError(errMsg);
+      if (!result.success) {
+        setProfileSaveError(result.message || '프로필 정보 수정에 실패했습니다.');
         return false;
       }
 
@@ -1087,52 +885,9 @@ export default function App() {
 
       return true;
     } catch (e: any) {
-      console.warn('GnuBoard remote profile edit failed, applying sandbox sync:', e);
-      
-      // Local Sandbox Fallback
-      const storedGnu = localStorage.getItem('bukmin_gnu_members');
-      let membersList = storedGnu ? JSON.parse(storedGnu) : [];
-      
-      // Check nick conflict locally (exclude current user)
-      if (membersList.some((m: any) => m.mb_nick === newNick && m.mb_id.toLowerCase() !== mb_id.toLowerCase())) {
-        setIsProfileSaving(false);
-        setProfileSaveError('이미 다른 회원이 사용 중인 닉네임입니다 (로컬 검수 대조).');
-        return false;
-      }
-
-      // Update in local array
-      let updatedList = membersList.map((m: any) => {
-        if (m.mb_id.toLowerCase() === mb_id.toLowerCase()) {
-          return {
-            ...m,
-            mb_nick: newNick,
-            mb_tel: newTel
-          };
-        }
-        return m;
-      });
-
-      localStorage.setItem('bukmin_gnu_members', JSON.stringify(updatedList));
-
-      // Successfully updated profile local states
-      const updatedProfile = {
-        ...userProfile!,
-        nick: newNick,
-        tel: newTel
-      };
-      
-      setUserProfile(updatedProfile);
-      localStorage.setItem('bukmin_user_profile', JSON.stringify(updatedProfile));
-
       setIsProfileSaving(false);
-      setProfileSaveSuccess(true);
-
-      setTimeout(() => {
-        setProfileSaveSuccess(false);
-        setIsProfileModalOpen(false);
-      }, 1500);
-
-      return true;
+      setProfileSaveError(e.message || '프로필 수정 도중 연결 오류가 발생했습니다.');
+      return false;
     }
   };
 
@@ -1181,21 +936,6 @@ export default function App() {
     setUserProfile(null);
     localStorage.removeItem('bukmin_is_logged_in');
     localStorage.removeItem('bukmin_user_profile');
-    // Clear standard active session
-    if (isG5LiveAuth) {
-      const logoutG5Session = async () => {
-        const url = (localStorage.getItem('bukmin_g5_api_url') || 'http://onenk.kr/g5/g5_sync_bridge.php').replace('/sync_bridge.php', '/g5_sync_bridge.php');
-        const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
-        try {
-          await safeG5Fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({ action: 'check_session_logout' }) // optional endpoint trigger
-          });
-        } catch(e){}
-      };
-      logoutG5Session();
-    }
   };
   
   // Interactive global search & video modal controllers
@@ -1875,6 +1615,11 @@ export default function App() {
               </div>
             </div>
 
+            {/* Seamless Infinite Partners Marquee Panel */}
+            <div className="mt-14" id="home-partners-slider-panel">
+              <PartnerSlide />
+            </div>
+
           </div>
         )}
 
@@ -1924,6 +1669,7 @@ export default function App() {
             setAboutLocation={setAboutLocation}
             projectsData={projectsData}
             setProjectsData={setProjectsData}
+            onOpenBannerEditor={() => setIsBannerModalOpen(true)}
           />
         )}
 
@@ -1995,17 +1741,6 @@ export default function App() {
                 title="개발센터 비밀포탈"
               >
                 일
-              </button>
-              <span className="text-gray-300 font-bold">|</span>
-              <button 
-                type="button"
-                onClick={() => setIsG5IntegratorOpen(true)}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 border border-blue-200/50 rounded text-[9.5px] font-black text-blue-700 transition-all cursor-pointer hover:scale-103 active:scale-97 select-none"
-                id="footer-g5-badge-link"
-                title="JM5 실시간 통합 연동 및 자가 진단 허브 센터"
-              >
-                <span className="w-1 h-1 rounded-full bg-blue-600 animate-pulse"></span>
-                <span>[G5 통합연동]</span>
               </button>
             </div>
             
@@ -2370,10 +2105,10 @@ export default function App() {
                     <div className="text-left bg-blue-50/50 p-4 border border-blue-100/60 rounded-2xl mb-4 space-y-1">
                       <div className="text-xs font-bold text-blue-800 flex items-center gap-1">
                         <Shield className="w-3.5 h-3.5 shrink-0 animate-pulse" />
-                        JM5 실시간 DB 직접 인증 연계
+                        북민회 통합 안심 DB 로그인
                       </div>
                       <p className="text-[10.5px] text-gray-500 font-medium leading-relaxed">
-                        사단법인 북한이탈주민중앙회 승인 정회원은 지급된 아이디로 비공개 소통 공간에 한해 무제한 정착 자문을 획득할 수 있습니다. {isG5LiveAuth ? '🟢 현재 G5 실시간 MariaDB 직접 연동이 활성화되어 있습니다.' : '🔵 완벽한 UI 시뮬레이션 모드로 작동 중입니다.'}
+                        사단법인 북한이탈주민중앙회 승인 정회원은 발급받은 아이디로 로그인하여 실시간 소통망 및 자문 게시판을 이용하실 수 있습니다.
                       </p>
                     </div>
 
@@ -2391,54 +2126,7 @@ export default function App() {
                         const mb_id = (target.elements.namedItem('login-id') as HTMLInputElement).value;
                         const mb_pw = (target.elements.namedItem('login-pw') as HTMLInputElement).value;
                         
-                        if (isG5LiveAuth) {
-                          await loginWithGnuBoard(mb_id, mb_pw);
-                        } else {
-                          // Local Simulation Login
-                          setIsAuthLoggingIn(true);
-                          setAuthErrorMsg('');
-                          
-                          setTimeout(() => {
-                            setIsAuthLoggingIn(false);
-                            const storedGnu = localStorage.getItem('bukmin_gnu_members');
-                            const membersList = storedGnu ? JSON.parse(storedGnu) : [];
-                            const foundMember = membersList.find((m: any) => m.mb_id === mb_id);
-                            
-                            const localPasswords = localStorage.getItem('bukmin_gnu_local_pwd') || '{}';
-                            const pwdMap = JSON.parse(localPasswords);
-                            const savedPwd = pwdMap[mb_id];
-
-                            if (foundMember) {
-                              if (savedPwd && savedPwd !== mb_pw) {
-                                setAuthErrorMsg('비밀번호가 일치하지 않습니다 (로컬 보안 대조).');
-                                return;
-                              }
-                              triggerLoginWithAnim({
-                                id: foundMember.mb_id,
-                                name: foundMember.mb_name,
-                                role: Number(foundMember.mb_level) >= 10 ? '최고 관리자' : Number(foundMember.mb_level) >= 4 ? '게시판장' : '공식 정회원'
-                              });
-                            } else {
-                              // If it's one of pre-existing defaults or random pass-through
-                              const defaultUsers: Record<string, string> = {
-                                'admin': 'admin123',
-                                'officer': 'officer123',
-                                'user1': 'user123'
-                              };
-                              if (defaultUsers[mb_id] && defaultUsers[mb_id] !== mb_pw) {
-                                setAuthErrorMsg('비밀번호가 일치하지 않습니다.');
-                                return;
-                              }
-                              const nameMatch = mb_id.split('@')[0] || '통일회원';
-                              const formattedName = nameMatch.charAt(0).toUpperCase() + nameMatch.slice(1);
-                              triggerLoginWithAnim({ 
-                                name: formattedName.length > 5 ? '통일회원' : formattedName, 
-                                role: '공식 정회원', 
-                                id: mb_id 
-                              });
-                            }
-                          }, 600);
-                        }
+                        await loginWithGnuBoard(mb_id, mb_pw);
                       }}
                       className="space-y-4 text-left"
                     >
@@ -2536,12 +2224,12 @@ export default function App() {
                   <>
                     {/* Registration form */}
                     <div className="text-left bg-emerald-50/40 p-3.5 border border-emerald-100/60 rounded-2xl mb-4 space-y-1">
-                      <div className="text-xs font-bold text-emerald-850 flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5 text-emerald-600 shrink-0 animate-pulse" />
-                        GnuBoard 5 DB 실시간 가입 동기화
+                      <div className="text-xs font-bold text-blue-900 flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600 shrink-0 animate-pulse" />
+                        북민회 정회원 통합 가입
                       </div>
                       <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                        가입 즉시 JM 표준 <code>g5_member</code> 테이블에 해시 처리된 암호로 즉시 보존 기록됩니다. 정회원 가입 축하 포인트 1,000점이 지급됩니다!
+                        가입 즉시 북한이탈주민중앙회 공식 회원 정보 시스템에 해시 처리된 암호로 즉시 안심 기록됩니다. 정회원 가입 축하 포인트 2,000점이 즉시 지급됩니다!
                       </p>
                     </div>
 
@@ -2656,7 +2344,7 @@ export default function App() {
                           />
                         </div>
 
-                        {/* Submit GnuBoard Registration */}
+                        {/* Submit Native Registration */}
                         <button
                           type="submit"
                           disabled={isAuthRegistering}
@@ -2665,12 +2353,12 @@ export default function App() {
                           {isAuthRegistering ? (
                             <>
                               <RefreshCw className="w-4 h-4 animate-spin" />
-                              <span>회원 가입 처리 데이터 동기화 중...</span>
+                              <span>회원 가입 승인 처리 중...</span>
                             </>
                           ) : (
                             <>
                               <User className="w-4 h-4" /> 
-                              <span>GnuBoard5 DB 정회원 등록 가입</span>
+                              <span>북민회 정회원 등록 가입</span>
                             </>
                           )}
                         </button>

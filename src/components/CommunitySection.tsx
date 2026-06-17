@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { safeG5Fetch } from '../utils/g5Api';
 import { MessageSquare, ThumbsUp, Eye, Search, PlusCircle, PenTool, CheckCircle, Info, Calendar, Lock, HelpCircle, Bell, ChevronRight, Sparkles, Share2, Link2, MessageCircle, X, AlertCircle, Shield, Award, User } from 'lucide-react';
 import { Post, Comment } from '../types';
+import { bukminApi } from '../utils/bukminApi';
 
 // Helper to determine deterministic comment author profile styling & rank levels
 const getCommentAuthorMeta = (authorName: string) => {
@@ -140,104 +141,18 @@ export default function CommunitySection({
   const [newCommentAuthor, setNewCommentAuthor] = useState('');
   const [newCommentText, setNewCommentText] = useState('');
 
-  // Prepopulate standard database in localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('bukmin_posts_v1');
-    if (saved) {
-      setPosts(JSON.parse(saved));
-    } else {
-      const initialPosts: Post[] = [
-        {
-          id: 'post-1',
-          type: 'notice',
-          title: '[공지] 2026 하반기 정착 생활 장학생 선발 모집 규격 안내',
-          content: '안녕하십니까, 사단법인 북한이탈주민중앙회 기획재정부입니다.\n본회 가입 회원의 자녀 및 학업을 이행하고 있는 북한이탈주민 청년들을 자조 격려하기 위한 하반기 인재 장학 전형 접수를 시작합니다.\n\n■ 접수 기한: 2026년 7월 15일까지\n■ 제출 서류: 장학 신청원, 북한이탈주민 확인서, 학업 성적 증명서\n많은 지원 바랍니다.',
-          author: '중앙회 관리총무처',
-          date: '2026-06-11',
-          views: 94,
-          likes: 21,
-          comments: [
-            { id: 'com-1', author: '강철수', content: '좋은 소식 감사합니다! 주변 대학생 탈북 청년들에게도 널리 알리겠습니다.', date: '2026-06-11' }
-          ]
-        },
-        {
-          id: 'post-private-1',
-          type: 'private',
-          title: '[정회원 기밀] 2026 하반기 긴급 정착자금 수혜 특별 배정 현황 공람 (우대배부)',
-          content: '안녕하십니까, 중앙회 정회원 심사위원회입니다.\n올해 하반기 영세 보수 가구 및 위기 중독 세대를 자조 격려하고자 지급되는 특별 후원 특별 연대 자금 산정안이 정식 인가되었습니다.\n\n정회원들께서는 지급 영수증과 실명 거주 확인 지침서를 지참하시고 다음 주 금요일 오전까지 중앙회 3층 자력지원실로 신분증 및 사도 도장을 지참하시어 직접 내방해 주십시오.\n\n본 사항은 정회원에 선결 부여되는 안심 기밀 조치이므로 제3자 유포 및 남용 시 자조 혜택 연대가 정지될 수 있음에 유의하십시오.',
-          author: '중앙기금운용위',
-          date: '2026-06-12',
-          views: 18,
-          likes: 6,
-          comments: []
-        },
-        {
-          id: 'post-private-2',
-          type: 'private',
-          title: '[취업추천] 현대정보고속 특별 연계 전형 추천서 가접수 공문 (자녀 대조군)',
-          content: '사단법인 북한이탈주민중앙회와 현대차그룹 인재연계교류회가 정식 맺은 통일 우대 정주 협정에 의거하여, 본회 소속 정회원 자녀 및 대졸 청년들을 대상으로 한 긴급 교직/특전 사관 채용 직무 상담 추천서를 우선 교부합니다.\n\n접수는 본회 사무처 대표 이메일 및 유선 행정을 통해 선결 6인에 한해 배정 조치되오니 서둘러 상담을 의뢰하십시오.',
-          author: '중앙회 자조추천처',
-          date: '2026-06-10',
-          views: 29,
-          likes: 11,
-          comments: []
-        },
-        {
-          id: 'post-2',
-          type: 'free',
-          title: '지난주 주말 수제 오찬 빵 나눔 봉사에 동행했습니다. 정말 감동적이었습니다.',
-          content: '처음 만나는 어르신들께서 손을 잡아주시며 "자유 찾아서 남한에서 열심히 살고, 또 이렇게 봉사까지 하느라 눈물겹도록 기특하다"고 격려해 주셨을 때 눈시울이 붉어졌습니다.\n\n정부의 양치 지원에만 의존하지 않고 주체적으로 우리 사회의 한 기둥이 되겠다는 다짐을 되새기게 한 하루였습니다. 앞으로도 정기 모임 동아리에 꾸준히 참가하겠습니다.',
-          author: '김하나',
-          date: '2026-06-08',
-          views: 142,
-          likes: 38,
-          comments: [
-            { id: 'com-2', author: '도우미원', content: '정말 고생 많으셨습니다! 김하나 님의 수기 덕에 봉사단의 기운이 배가 되네요.', date: '2026-06-08' },
-            { id: 'com-3', author: '이철민', content: '다음 나눔에는 저도 꼭 정식 가입하여 참여하려 합니다. 가입 정보는 어디로 넣나요?', date: '2026-06-09' }
-          ]
-        },
-        {
-          id: 'post-3',
-          type: 'qna',
-          title: '정착지원금 및 법률 구조 연계 절차가 어떻게 되나요?',
-          content: '최근 보증금 관련 분쟁이 터져 골머리를 썩고 있는데, 중앙회에서 변호사 연계 상담을 무료 지원받을 수 있는지 자세히 문의드립니다.',
-          author: '박정우',
-          date: '2026-06-05',
-          views: 89,
-          likes: 12,
-          comments: [
-            { id: 'com-4', author: '법률보호과', content: '안녕하십니까 박정우 님. 본회에서는 대한법률구조공단 계약을 통해 무상 상담을 연계합니다. 우측 탭이나 전화 02-6498-3133으로 접수하시면 조속히 이민 전문 변호사를 연결 및 구술 조율해 드리겠습니다.', date: '2026-06-05' }
-          ]
-        },
-        {
-          id: 'post-4',
-          type: 'free',
-          title: '신뢰받는 협의회 운영을 촉진하기 위한 건의 드립니다.',
-          content: '중앙회 사이트 전면 투명 전산 회계가 전결 처리되어 영수 내역까지 pdf 다운로드 되니 기탁 회원으로서 매우 안심되고 자긍심이 듭니다.\n소수 단체들의 회계 부설 잡음이 통일 운동을 저해하곤 하는데, 북민회가 모범을 보여주어 너무 다행이십니다.',
-          author: '윤기탁',
-          date: '2026-05-28',
-          views: 110,
-          likes: 45,
-          comments: []
-        }
-      ];
-      localStorage.setItem('bukmin_posts_v1', JSON.stringify(initialPosts));
-      setPosts(initialPosts);
-    }
-  }, []);
-
-  const savePosts = (newPosts: Post[]) => {
-    localStorage.setItem('bukmin_posts_v1', JSON.stringify(newPosts));
-    setPosts(newPosts);
+  const savePosts = (updatedPosts: Post[]) => {
+    setPosts(updatedPosts);
+    localStorage.setItem('bukmin_posts_v1', JSON.stringify(updatedPosts));
   };
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim() || !newContent.trim() || !newAuthor.trim()) return;
 
-    const draft: Post = {
-      id: `post-${Date.now()}`,
-      type: activeBoard,
+    const newPostItem: Post = {
+      id: `local_post_${Date.now()}`,
+      type: activeBoard as any,
       title: newTitle,
       content: newContent,
       author: newAuthor,
@@ -247,20 +162,122 @@ export default function CommunitySection({
       comments: []
     };
 
-    const updated = [draft, ...posts];
+    try {
+      await bukminApi.writePost(activeBoard, newTitle, newContent, newAuthor, newPostItem.id);
+    } catch (err) {
+      console.warn("SQL write error, fallback to memory:", err);
+    }
+
+    const updated = [newPostItem, ...posts];
     savePosts(updated);
 
-    // Reset draft fields
+    // Reset fields
     setNewTitle('');
     setNewContent('');
     setNewAuthor('');
     setIsCreating(false);
+
+    // Reload posts and dispatch sync update
+    await loadPostsFromBackend();
+    window.dispatchEvent(new Event('bukmin_posts_updated'));
+  };
+
+  // Load posts either from server database (Highest Priority) or local backups
+  const loadPostsFromBackend = async () => {
+    try {
+      const res = await bukminApi.getPosts();
+      if (res.success && res.posts && res.posts.length > 0) {
+        setPosts(res.posts);
+        localStorage.setItem('bukmin_posts_v1', JSON.stringify(res.posts));
+      } else {
+        const saved = localStorage.getItem('bukmin_posts_v1');
+        if (saved) {
+          setPosts(JSON.parse(saved));
+        } else {
+          const initialPosts: Post[] = [
+            {
+              id: 'post-1',
+              type: 'notice',
+              title: '[공지] 2026 하반기 정착 생활 장학생 선발 모집 규격 안내',
+              content: '안녕하십니까, 사단법인 북한이탈주민중앙회 기획재정부입니다.\n본회 가입 회원의 자녀 및 학업을 이행하고 있는 북한이탈주민 청소년들을 위해 장학 전형 배정안이 신설되었습니다. 상세 요강은 첨부파일 및 공문서를 필독하시어 기한 내 지원바랍니다.',
+              author: '기획재정부',
+              date: '2026-06-12',
+              views: 145,
+              likes: 22,
+              comments: [
+                { id: 'com-1', author: '강철우', content: '올해는 고등학생 자녀 상담도 포함되는지요?', date: '2026-06-12' }
+              ]
+            },
+            {
+              id: 'post-private-1',
+              type: 'private',
+              title: '[정회원 기밀] 2026 하반기 긴급 정착자금 수혜 특별 배정 현황 공람 (우대배부)',
+              content: '안녕하십니까, 중앙회 정회원 심사위원회입니다.\n올해 하반기 영세 보수 가구 및 위기 중독 세대를 자조 격려하고자 지급되는 특별 후원 특별 연대 자금 산정안이 정식 인가되었습니다.\n\n정회원들께서는 지급 영수증 and 실명 거주 확인 지침서를 지참하시고 다음 주 금요일 오전까지 중앙회 3층 자력지원실로 신분증 및 사도 도장을 지참하시어 직접 내방해 주십시오.\n\n본 사항은 정회원에 선결 부여되는 안심 기밀 조치이므로 제3자 유포 및 남용 시 자조 혜택 연대가 정지될 수 있습니다.',
+              author: '심사기획처',
+              date: '2026-06-10',
+              views: 124,
+              likes: 38,
+              comments: [
+                { id: 'com-2', author: '도우미원', content: '정말 고생 많으셨습니다! 심도 힘이 불끈 솟네요.', date: '2026-06-10' },
+                { id: 'com-3', author: '이철민', content: '다음 나눔에는 저도 꼭 정식 가입하여 참여하려 합니다. 가입 정보는 어디로 넣나요?', date: '2026-06-11' }
+              ]
+            },
+            {
+              id: 'post-2',
+              type: 'free',
+              title: '함께 나누는 독거노인 돌봄 다과 연대 수기',
+              content: '처음 만나는 어르신들께서 손을 잡아주시며 "자유 찾아서 남한에서 열심히 살고, 또 이렇게 봉사까지 하느라 눈물겹도록 기특하다"고 격려해 주셨을 때 눈시울이 붉어졌습니다. 이런 따뜻함 덕분에 새로운 정착 사회가 더 소중히 느껴집니다. 다음 기회에도 꼭 기여하고 싶습니다.',
+              author: '김하나',
+              date: '2026-06-08',
+              views: 124,
+              likes: 38,
+              comments: [
+                { id: 'com-2', author: '도우미원', content: '정말 고생 많으셨습니다! 김하나 님의 수기 덕에 봉사단의 기운이 배가 되네요.', date: '2026-06-08' },
+                { id: 'com-3', author: '이철민', content: '다음 나눔에는 저도 꼭 정식 가입하여 참여하려 합니다. 가입 정보는 어디로 넣나요?', date: '2026-06-09' }
+              ]
+            },
+            {
+              id: 'post-3',
+              type: 'qna',
+              title: '정착지원금 및 법률 구조 연계 절차가 어떻게 되나요?',
+              content: '최근 보증금 관련 분쟁이 터져 골머리를 썩고 있는데, 중앙회에서 변호사 연계 상담을 무료 지원받을 수 있는지 자세히 문의드립니다.',
+              author: '박정우',
+              date: '2026-06-05',
+              views: 89,
+              likes: 12,
+              comments: [
+                { id: 'com-4', author: '법률보호과', content: '안녕하십니까 박정우 님. 본회에서는 대한법률구조공단 계약을 통해 무상 상담을 연계합니다. 우측 탭이나 전화 02-6498-3133으로 접수하시면 조속히 이민 전문 변호사를 연결 및 구술 조율해 드리겠습니다.', date: '2026-06-05' }
+              ]
+            },
+            {
+              id: 'post-4',
+              type: 'free',
+              title: '신뢰받는 협의회 운영을 촉진하기 위한 건의 드립니다.',
+              content: '중앙회 사이트 전면 투명 전산 회계가 전결 처리되어 영수 내역까지 pdf 다운로드 되니 기탁 회원으로서 매우 안심되고 자긍심이 듭니다.\n소수 단체들의 회계 부설 잡음이 통일 운동을 저해하곤 하는데, 북민회가 모범을 보여주어 너무 다행이십니다.',
+              author: '윤기탁',
+              date: '2025-05-28',
+              views: 110,
+              likes: 45,
+              comments: []
+            }
+          ];
+          localStorage.setItem('bukmin_posts_v1', JSON.stringify(initialPosts));
+          setPosts(initialPosts);
+        }
+      }
+    } catch (e) {
+      console.warn("Backend posts load failed, trying local cache:", e);
+      const saved = localStorage.getItem('bukmin_posts_v1');
+      if (saved) {
+        setPosts(JSON.parse(saved));
+      }
+    }
   };
 
   const handleG5Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!g5Title.trim() || !g5Content.trim()) {
-      setG5SubmitError("제목과 상세 진술 본문은 필수 입력 사항입니다.");
+      setG5SubmitError("제목과 상세 본문은 필수 입력 사항입니다.");
       return;
     }
 
@@ -268,82 +285,14 @@ export default function CommunitySection({
     setG5SubmitError("");
     setG5SubmitSuccess("");
 
-    const url = localStorage.getItem('bukmin_g5_api_url') || 'https://ais-dev-kzdtozv3jubnslckdbbxxh-67901360423.asia-east1.run.app/g5_sync_bridge.php';
-    const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
-    const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
-    const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
-    const db_user = localStorage.getItem('bukmin_g5_db_user') || 'g5_db_user';
-    const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
+    const authorName = userProfile?.nick || userProfile?.name || '정회원';
 
     try {
-      const authorName = userProfile?.nick || userProfile?.name || '정회원';
-      const mbId = userProfile?.id || 'guest';
-
-      // Access traffic logger for API dashboard tracking
-      const trafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
-      const newLog = {
-        id: `log-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        action: 'write_post',
-        endpoint: url,
-        requestSize: JSON.stringify({ bo_table: g5TargetBoard, wr_subject: g5Title }).length,
-        status: 'pending',
-        latency: 0,
-      };
-      trafficLogs.unshift(newLog);
-      localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(trafficLogs.slice(0, 100)));
-
-      const startTime = performance.now();
-
-      const response = await safeG5Fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          action: "write_post",
-          bo_table: g5TargetBoard,
-          wr_subject: g5Title,
-          wr_content: g5Content,
-          wr_name: authorName,
-          mb_id: mbId,
-          db_host,
-          db_name,
-          db_user,
-          db_password
-        })
-      });
-
-      const endTime = performance.now();
-      const latency = Math.round(endTime - startTime);
-
-      // Save sync logs feedback
-      const updatedTrafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
-      const targetLogIndex = updatedTrafficLogs.findIndex((l: any) => l.id === newLog.id);
-      if (targetLogIndex > -1) {
-        updatedTrafficLogs[targetLogIndex].status = response.ok ? 'success' : 'error';
-        updatedTrafficLogs[targetLogIndex].latency = latency;
-        localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(updatedTrafficLogs));
-      }
-
-      let result: any = {};
-      try {
-        result = await response.json();
-      } catch (jsonErr) {
-        throw new Error("서버에서 빈 응답 또는 HTML 형식이 수신되었습니다.");
-      }
-
-      setIsG5Submitting(false);
-
-      if (!response.ok || result.status !== "success") {
-        setG5SubmitError(result.message || "원격 JM 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
-        return;
-      }
-
-      // Success write GnuBoard
+      const draftId = `post-local-${Date.now()}`;
+      await bukminApi.writePost(g5TargetBoard, g5Title, g5Content, authorName, draftId);
+      
       const newPostItem: Post = {
-        id: `g5_post_${result.data?.wr_id || Date.now()}`,
+        id: draftId,
         type: g5TargetBoard as any,
         title: g5Title,
         content: g5Content,
@@ -357,59 +306,33 @@ export default function CommunitySection({
       const updatedPosts = [newPostItem, ...posts];
       savePosts(updatedPosts);
 
-      setG5SubmitSuccess("JM 전산 데이터베이스에 실시간 양방향 전송 및 인가 등재를 완벽히 인출 완료하였습니다!");
+      setG5SubmitSuccess("게시판에 새 글이 성공적으로 등록되었습니다!");
       setG5Title("");
       setG5Content("");
 
-      // Automatically sync latest list too
+      // Reload posts and dispatch update event
+      await loadPostsFromBackend();
       window.dispatchEvent(new Event('bukmin_posts_updated'));
 
       setTimeout(() => {
         setIsG5ModalOpen(false);
         setG5SubmitSuccess("");
-      }, 2000);
+      }, 1500);
 
     } catch (err: any) {
       setIsG5Submitting(false);
-      console.warn("Falling back to local simulation buffer due to:", err);
-      
-      // Fallback for sandboxed developer runtime environment
-      const authorName = userProfile?.nick || userProfile?.name || '정회원';
-      const fallbackId = `g5_local_${Date.now()}`;
-      const newPostItem: Post = {
-        id: fallbackId,
-        type: g5TargetBoard as any,
-        title: g5Title,
-        content: g5Content,
-        author: authorName,
-        date: new Date().toISOString().split('T')[0],
-        views: 1,
-        likes: 0,
-        comments: []
-      };
-
-      const updatedPosts = [newPostItem, ...posts];
-      savePosts(updatedPosts);
-
-      setG5SubmitSuccess("🚨 [로컬 안심보존 성공] 원격 GnuBoard5 DB 교신 지연으로 인해 완벽한 무결성을 지키고자 브라우저 로컬 안전 메모리 버퍼에 즉각 수록 보존하였습니다.");
-      setG5Title("");
-      setG5Content("");
-
-      setTimeout(() => {
-        setIsG5ModalOpen(false);
-        setG5SubmitSuccess("");
-      }, 2500);
+      setG5SubmitError("글 등록 도중 오류가 발생했습니다: " + err.message);
     }
   };
 
   const handleAddComment = async (e: React.FormEvent, postId: string) => {
     e.preventDefault();
     if (!isLoggedIn) {
-      setG5CommentError("댓글을 작성하려면 본인 확인 및 정회원 로그인이 필수적입니다.");
+      setG5CommentError("댓글을 작성하려면 로그인이 필요합니다.");
       return;
     }
     if (!newCommentText.trim()) {
-      setG5CommentError("댓글 내용을 고르게 입력해 주세요.");
+      setG5CommentError("댓글 내용을 입력해 주세요.");
       return;
     }
 
@@ -418,123 +341,10 @@ export default function CommunitySection({
     setG5CommentSuccess("");
 
     const authorName = userProfile?.nick || userProfile?.name || '정회원';
-    const mbId = userProfile?.id || 'guest';
-
-    // Retrieve target post
-    const targetPost = posts.find(p => p.id === postId);
-    const bo_table = targetPost?.type || 'free';
-
-    // Determine numerical wr_id for GnuBoard
-    const numMatch = postId.match(/\d+/);
-    const wr_id = numMatch ? parseInt(numMatch[0], 10) : 1;
-
-    const url = localStorage.getItem('bukmin_g5_api_url') || 'https://ais-dev-kzdtozv3jubnslckdbbxxh-67901360423.asia-east1.run.app/g5_sync_bridge.php';
-    const apiKey = localStorage.getItem('bukmin_g5_api_key') || 'bukmin_secure_token_5848';
-    const db_host = localStorage.getItem('bukmin_g5_db_host') || '127.0.0.1';
-    const db_name = localStorage.getItem('bukmin_g5_db_name') || 'g5_database';
-    const db_user = localStorage.getItem('bukmin_g5_db_user') || 'g5_db_user';
-    const db_password = localStorage.getItem('bukmin_g5_db_password') || 'password123!';
 
     try {
-      // Access traffic logger for API dashboard tracking
-      const trafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
-      const newLog = {
-        id: `comment-log-${Date.now()}`,
-        timestamp: new Date().toISOString(),
-        action: 'write_comment',
-        endpoint: url,
-        requestSize: JSON.stringify({ bo_table, wr_id, wr_content: newCommentText }).length,
-        status: 'pending',
-        latency: 0,
-      };
-      trafficLogs.unshift(newLog);
-      localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(trafficLogs.slice(0, 100)));
-
-      const startTime = performance.now();
-
-      const response = await safeG5Fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          action: "write_comment",
-          bo_table,
-          wr_id,
-          wr_content: newCommentText,
-          wr_name: authorName,
-          mb_id: mbId,
-          db_host,
-          db_name,
-          db_user,
-          db_password
-        })
-      });
-
-      const endTime = performance.now();
-      const latency = Math.round(endTime - startTime);
-
-      // Save sync logs feedback
-      const updatedTrafficLogs = JSON.parse(localStorage.getItem('bukmin_g5_traffic_logs') || '[]');
-      const targetLogIndex = updatedTrafficLogs.findIndex((l: any) => l.id === newLog.id);
-      if (targetLogIndex > -1) {
-        updatedTrafficLogs[targetLogIndex].status = response.ok ? 'success' : 'error';
-        updatedTrafficLogs[targetLogIndex].latency = latency;
-        localStorage.setItem('bukmin_g5_traffic_logs', JSON.stringify(updatedTrafficLogs));
-      }
-
-      let result: any = {};
-      try {
-        result = await response.json();
-      } catch (jsonErr) {
-        throw new Error("서버에서 빈 응답 또는 올바르지 않은 형식이 수신되었습니다.");
-      }
-
-      setIsG5CommentSubmitting(false);
-
-      if (!response.ok || result.status !== "success") {
-        setG5CommentError(result.message || "원격 JM 서버 전산 오류가 발생하여 안전 저장에 차질이 생겼습니다.");
-        return;
-      }
-
-      const freshCommentId = `com-g5-${result.data?.comment_id || Date.now()}`;
-      const freshComment: Comment = {
-        id: freshCommentId,
-        author: authorName,
-        content: newCommentText,
-        date: new Date().toISOString().split('T')[0]
-      };
-
-      const updated = posts.map((p) => {
-        if (p.id === postId) {
-          const updatedPost = {
-            ...p,
-            comments: [...p.comments, freshComment]
-          };
-          if (selectedPost?.id === postId) {
-            setSelectedPost(updatedPost);
-          }
-          return updatedPost;
-        }
-        return p;
-      });
-
-      savePosts(updated);
-      setNewCommentText('');
-      setG5CommentSuccess("JM 전산 데이터베이스에 실시간 양방향 댓글 등재를 완벽히 완료하였습니다!");
-
-      window.dispatchEvent(new Event('bukmin_posts_updated'));
-
-      setTimeout(() => {
-        setG5CommentSuccess("");
-      }, 3000);
-
-    } catch (err) {
-      console.warn("Falling back to local simulation due to network barrier:", err);
-      setIsG5CommentSubmitting(false);
-
-      // Stable local save
+      await bukminApi.writeComment(postId, authorName, newCommentText);
+      
       const freshComment: Comment = {
         id: `com-local-${Date.now()}`,
         author: authorName,
@@ -546,7 +356,7 @@ export default function CommunitySection({
         if (p.id === postId) {
           const updatedPost = {
             ...p,
-            comments: [...p.comments, freshComment]
+            comments: [...(p.comments || []), freshComment]
           };
           if (selectedPost?.id === postId) {
             setSelectedPost(updatedPost);
@@ -558,11 +368,18 @@ export default function CommunitySection({
 
       savePosts(updated);
       setNewCommentText('');
-      setG5CommentSuccess("🚨 [로컬 임시보존] 원격 GnuBoard5 DB 교신 지연으로 에러방지 및 완벽한 무결 조존을 위해 브라우저 로컬 안전 메모리에 수록하였습니다.");
+      setG5CommentSuccess("댓글 등록이 완료되었습니다.");
+
+      await loadPostsFromBackend();
+      window.dispatchEvent(new Event('bukmin_posts_updated'));
 
       setTimeout(() => {
         setG5CommentSuccess("");
-      }, 3500);
+      }, 1500);
+
+    } catch (err: any) {
+      setIsG5CommentSubmitting(false);
+      setG5CommentError("댓글 등록 실패: " + err.message);
     }
   };
 
@@ -1006,7 +823,7 @@ export default function CommunitySection({
                         </span>
                       </div>
                       <span className="text-[9.5px] font-bold text-gray-400">
-                        GnuBoard 5 Real-time API
+                        북민회 전산 보존 소통망
                       </span>
                     </div>
 
@@ -1206,7 +1023,7 @@ export default function CommunitySection({
         </div>
       </div>
 
-      {/* GnuBoard API-Linked Floating Write Button */}
+      {/* Native Floating Write Button */}
       <button
         id="community-floating-write-btn"
         className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white p-4 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-300 group flex items-center gap-2 select-none border border-white/20 cursor-pointer"
@@ -1233,7 +1050,7 @@ export default function CommunitySection({
         </span>
       </button>
 
-      {/* GnuBoard API Real-time Write Modal */}
+      {/* Native Real-time Write Modal */}
       {isG5ModalOpen && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200" 
@@ -1248,11 +1065,11 @@ export default function CommunitySection({
               <div className="space-y-0.5 text-left">
                 <span className="text-[9px] font-black text-blue-400 tracking-widest uppercase flex items-center gap-1 select-none">
                   <Sparkles className="w-3 h-3 animate-pulse" />
-                  GnuBoard 5 API Bridge Link
+                  북한이탈주민중앙회 자체 안심 소통 포털
                 </span>
                 <h3 className="text-sm font-black flex items-center gap-1.5">
                   <PenTool className="w-4 h-4 text-blue-400 shrink-0" />
-                  실시간 양방향 게시판 글쓰기
+                  실시간 소통 게시글 등재
                 </h3>
               </div>
               <button
@@ -1281,23 +1098,23 @@ export default function CommunitySection({
                 <div className="text-right">
                   <span className="inline-flex items-center gap-1 text-[9.5px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-                    인증 토큰 동기화됨
+                    본회 정회원 인증 완료
                   </span>
                 </div>
               </div>
 
               {/* Board Selection */}
               <div className="space-y-1.5">
-                <label className="text-[11px] font-extrabold text-gray-700 block">대상 JM 게시판 (bo_table)</label>
+                <label className="text-[11px] font-extrabold text-gray-700 block">대상 게시판 선택</label>
                 <select
                   value={g5TargetBoard}
                   onChange={(e) => setG5TargetBoard(e.target.value as any)}
                   className="w-full text-xs font-semibold bg-slate-50 border border-gray-200 focus:border-blue-500 focus:bg-white px-3 py-2.5 rounded-xl focus:outline-none transition-all cursor-pointer"
                 >
-                  <option value="free">자유게시판 (free)</option>
-                  <option value="qna">1:1 빠른 민원 Q&amp;A (qna)</option>
-                  <option value="private">3만 4천 통일기수 자조회 (private)</option>
-                  <option value="notice">중앙회 긴급 공지사항 (notice)</option>
+                  <option value="free">자유게시판</option>
+                  <option value="qna">1:1 빠른 민원 Q&amp;A</option>
+                  <option value="private">3만 4천 통일기수 자조회</option>
+                  <option value="notice">중앙회 긴급 공지사항</option>
                 </select>
               </div>
 
@@ -1360,7 +1177,7 @@ export default function CommunitySection({
                   {isG5Submitting ? (
                     <>
                       <div className="w-3 h-3 border-2 border-slate-300 border-t-white rounded-full animate-spin"></div>
-                      <span>서버 전산 처리중...</span>
+                      <span>저장 중...</span>
                     </>
                   ) : (
                     <>
