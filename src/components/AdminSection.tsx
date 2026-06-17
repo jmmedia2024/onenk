@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase, supabaseDb } from '../supabase';
+import { supabase, supabaseDb, getSupabaseConfig, updateSupabaseClient } from '../supabase';
 import { 
   Lock, 
   Unlock, 
@@ -242,7 +242,15 @@ export default function AdminSection({
   };
 
   // Supabase Live Integration Management States
-  const [supabaseStatus, setSupabaseStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
+  const [supabaseStatus, setSupabaseStatus] = useState<'unknown' | 'connected' | 'no_tables' | 'error'>('unknown');
+  const [supabaseUrlInput, setSupabaseUrlInput] = useState(() => getSupabaseConfig().url);
+  const [supabaseKeyInput, setSupabaseKeyInput] = useState(() => getSupabaseConfig().key);
+
+  const handleUpdateSupabaseCredentials = () => {
+    updateSupabaseClient(supabaseUrlInput, supabaseKeyInput);
+    testSupabaseConnection();
+  };
+
   const [supabaseLog, setSupabaseLog] = useState<string>('초기화 대기 중...');
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncProgress, setSyncProgress] = useState<Record<string, 'wait' | 'sync' | 'done' | 'fail'>>({
@@ -258,13 +266,16 @@ export default function AdminSection({
   const testSupabaseConnection = async () => {
     setSupabaseLog("Supabase 연결 상태 확인 중...");
     try {
-      const ok = await supabaseDb.testConnection();
-      if (ok) {
-        setSupabaseStatus('connected');
-        setSupabaseLog("✅ Supabase 클라우드에 성공적으로 접속되었습니다. 동기화 준비 완료!");
+      const report = await supabaseDb.testConnection();
+      setSupabaseLog(report.message);
+      if (report.success) {
+        if (report.status === 'no_tables') {
+          setSupabaseStatus('no_tables');
+        } else {
+          setSupabaseStatus('connected');
+        }
       } else {
         setSupabaseStatus('error');
-        setSupabaseLog("❌ Supabase 접속 실패. API Keys 유효성 또는 네트워크 상태를 점검해 주세요. (가져온 테이블이 부재하는 경우 동기화 시도 시 자동 생성될 수 있습니다)");
       }
     } catch (e: any) {
       setSupabaseStatus('error');
@@ -1014,14 +1025,28 @@ export default function AdminSection({
                       <div className={`p-1.5 px-3 rounded-full text-[11px] font-extrabold flex items-center gap-1.5 border ${
                         supabaseStatus === 'connected' 
                           ? 'bg-emerald-50 text-emerald-600 border-emerald-150' 
+                          : supabaseStatus === 'no_tables'
+                          ? 'bg-amber-50 text-amber-600 border-amber-150'
                           : supabaseStatus === 'error'
                           ? 'bg-rose-50 text-rose-600 border-rose-150'
                           : 'bg-slate-50 text-slate-500 border-slate-150'
                       }`}>
                         <span className={`w-2 h-2 rounded-full ${
-                          supabaseStatus === 'connected' ? 'bg-emerald-500' : supabaseStatus === 'error' ? 'bg-rose-500 animate-pulse' : 'bg-slate-400'
+                          supabaseStatus === 'connected' 
+                            ? 'bg-emerald-500' 
+                            : supabaseStatus === 'no_tables'
+                            ? 'bg-amber-500 animate-pulse'
+                            : supabaseStatus === 'error' 
+                            ? 'bg-rose-500 animate-pulse' 
+                            : 'bg-slate-400'
                         }`} />
-                        {supabaseStatus === 'connected' ? 'Supabase ONLINE' : supabaseStatus === 'error' ? 'Supabase OFFLINE' : '연결 상태 확인 필요'}
+                        {supabaseStatus === 'connected' 
+                          ? 'Supabase ONLINE' 
+                          : supabaseStatus === 'no_tables'
+                          ? '인증 성공 / 테이블 생성 필요'
+                          : supabaseStatus === 'error' 
+                          ? 'Supabase OFFLINE' 
+                          : '연결 상태 확인 필요'}
                       </div>
                     </div>
                   </div>
@@ -1035,26 +1060,43 @@ export default function AdminSection({
                         <div className="grid grid-cols-1 gap-2.5 text-xs">
                           <div className="space-y-1">
                             <span className="text-[10px] font-bold text-gray-400 block uppercase">Client Target URL</span>
-                            <div className="bg-slate-100/80 p-2.5 rounded-xl font-mono text-[11px] text-slate-600 border border-slate-200/50 select-all overflow-x-auto whitespace-nowrap">
-                              https://lkinchgwfrwurekfapid.supabase.co
-                            </div>
+                            <input
+                              type="text"
+                              value={supabaseUrlInput}
+                              onChange={(e) => setSupabaseUrlInput(e.target.value)}
+                              placeholder="https://your-project.supabase.co"
+                              className="w-full bg-white p-2.5 rounded-xl font-mono text-[11px] text-slate-700 border border-slate-200 select-text focus:outline-none focus:border-blue-500"
+                            />
                           </div>
                           <div className="space-y-1">
                             <span className="text-[10px] font-bold text-gray-400 block uppercase">Publishable Anon Key</span>
-                            <div className="bg-slate-100/80 p-2.5 rounded-xl font-mono text-[11px] text-slate-600 border border-slate-200/50 select-all overflow-x-auto whitespace-nowrap">
-                              sb_publishable_BX05B1NrxSVqQUdKIvpelQ_L_RgV9vU
-                            </div>
+                            <input
+                              type="text"
+                              value={supabaseKeyInput}
+                              onChange={(e) => setSupabaseKeyInput(e.target.value)}
+                              placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVC..."
+                              className="w-full bg-white p-2.5 rounded-xl font-mono text-[11px] text-slate-700 border border-slate-200 select-text focus:outline-none focus:border-blue-500"
+                            />
                           </div>
                         </div>
 
-                        <div className="flex gap-2 pt-2">
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <button
+                            type="button"
+                            onClick={handleUpdateSupabaseCredentials}
+                            className="bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 text-blue-700 font-extrabold text-[11px] px-3.5 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-all active:scale-97"
+                          >
+                            <Save className="w-3.5 h-3.5 text-blue-500" />
+                            설정 반영 및 연결
+                          </button>
+
                           <button
                             type="button"
                             onClick={testSupabaseConnection}
                             className="bg-slate-150 hover:bg-slate-200 border border-gray-200 hover:border-slate-350 text-slate-700 font-extrabold text-[11px] px-3.5 py-2.5 rounded-xl cursor-pointer flex items-center gap-1.5 transition-all active:scale-97"
                           >
                             <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-                            연결 상태 테스트
+                            연결 확인
                           </button>
                           
                           <button
@@ -1066,7 +1108,7 @@ export default function AdminSection({
                             }`}
                           >
                             <Layers className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-                            {isSyncing ? "데이터 원격 전송 및 동기화 중..." : "SQLite ➜ Supabase 클라우드 전체 전송 복제"}
+                            {isSyncing ? "복제 중..." : "SQLite ➜ Supabase 복제"}
                           </button>
                         </div>
                       </div>
@@ -1157,13 +1199,13 @@ CREATE TABLE IF NOT EXISTS comments (
 -- 4. 후원 내역 테이블
 CREATE TABLE IF NOT EXISTS donations (
   id TEXT PRIMARY KEY,
-  donorName TEXT NOT NULL,
+  "donorName" TEXT NOT NULL,
   amount BIGINT NOT NULL,
-  paymentMethod TEXT NOT NULL,
+  "paymentMethod" TEXT NOT NULL,
   date TEXT NOT NULL,
   message TEXT,
-  isRegular INT DEFAULT 0,
-  isRecognized INT DEFAULT 1
+  "isRegular" INT DEFAULT 0,
+  "isRecognized" INT DEFAULT 1
 );
 
 -- 5. 정착인 국가인증 처리 테이블
@@ -1171,32 +1213,31 @@ CREATE TABLE IF NOT EXISTS verifications (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   age BIGINT NOT NULL,
-  settlementYear BIGINT NOT NULL,
-  documentType TEXT NOT NULL,
+  "settlementYear" BIGINT NOT NULL,
+  "documentType" TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'pending',
-  requestDate TEXT NOT NULL
+  "requestDate" TEXT NOT NULL
 );
 
 -- 6. 메인 배너 슬라이드 테이블
 CREATE TABLE IF NOT EXISTS slides (
   id INT PRIMARY KEY,
-  imageUrl TEXT NOT NULL,
+  "imageUrl" TEXT NOT NULL,
   badge TEXT NOT NULL,
   title TEXT NOT NULL,
-  subTitle TEXT NOT NULL
+  "subTitle" TEXT NOT NULL
 );
 
 -- 7. 우수 유관 협력 파트너사 테이블
 CREATE TABLE IF NOT EXISTS partners (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
-  engName TEXT NOT NULL,
-  desc TEXT NOT NULL,
+  "engName" TEXT NOT NULL,
+  "desc" TEXT NOT NULL,
   color TEXT NOT NULL,
-  siteUrl TEXT NOT NULL,
-  logoUrl TEXT NOT NULL
-);`}
-                      </div>
+  "siteUrl" TEXT NOT NULL,
+  "logoUrl" TEXT NOT NULL
+);`}</div>
                     </div>
                   </div>
                 </div>
