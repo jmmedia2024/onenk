@@ -191,6 +191,31 @@ export default function AdminSection({
       });
       const data = await res.json();
       if (data.success) {
+        // Prepare IDs & Fallbacks
+        const partnerId = editingPartnerId || data.partnerId || `p-${Date.now()}`;
+        const defaultLogoSvg = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="%23ffffff" stroke="%23cbd5e1" stroke-width="1.5"/><text x="50" y="58" font-size="28" font-family="sans-serif" font-weight="bold" fill="%23475569" text-anchor="middle">${newPartnerName.slice(0, 2)}</text></svg>`;
+        const finalLogo = newPartnerLogo || defaultLogoSvg;
+
+        // Perform direct write (INSERT/UPDATE) to Supabase table
+        try {
+          const { error: sbError } = await supabase.from('partners').upsert({
+            id: partnerId,
+            name: newPartnerName,
+            engName: newPartnerEng || "",
+            desc: newPartnerDesc || "",
+            color: newPartnerColor,
+            siteUrl: newPartnerUrl,
+            logoUrl: finalLogo
+          });
+          if (sbError) {
+            console.warn("[AdminSection] Supabase sync warning for partners:", sbError.message);
+          } else {
+            console.log("[AdminSection] Successfully synchronized partner write to Supabase!");
+          }
+        } catch (sbErr) {
+          console.error("[AdminSection] Supabase partner integration exception:", sbErr);
+        }
+
         alert(editingPartnerId ? "파트너사 정보가 성공적으로 수정되었습니다!" : "새로운 파트너사가 실시간 성공적으로 생성 등록되었습니다.");
         setNewPartnerName('');
         setNewPartnerEng('');
@@ -220,6 +245,18 @@ export default function AdminSection({
       });
       const data = await res.json();
       if (data.success) {
+        // Perform direct delete write to Supabase table
+        try {
+          const { error: sbError } = await supabase.from('partners').delete().eq('id', id);
+          if (sbError) {
+            console.warn("[AdminSection] Supabase sync warning for deleting partner:", sbError.message);
+          } else {
+            console.log("[AdminSection] Successfully deleted partner from Supabase!");
+          }
+        } catch (sbErr) {
+          console.error("[AdminSection] Supabase partner deletion exception:", sbErr);
+        }
+
         alert("파트너사 연계가 안전하게 철회 및 삭제되었습니다.");
         fetchPartnersList();
         window.dispatchEvent(new CustomEvent("refresh-partners"));

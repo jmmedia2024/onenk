@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { HeroSlide, AboutGreeting, ProjectItem, AboutPurpose, AboutOrgCustom, AboutLocation } from './types';
 import { safeG5Fetch } from './utils/g5Api';
 import { bukminApi } from './utils/bukminApi';
+import { supabase } from './supabase';
 import { 
   Users, 
   Shield, 
@@ -44,7 +45,6 @@ import ProjectsSection from './components/ProjectsSection';
 import NewsSection from './components/NewsSection';
 import CommunitySection from './components/CommunitySection';
 import DonationSection from './components/DonationSection';
-import DevCenter from './components/DevCenter';
 import AdminSection from './components/AdminSection';
 import MainSlideBanner from './components/MainSlideBanner';
 import VideoShowcase from './components/VideoShowcase';
@@ -54,7 +54,7 @@ import G5IntegrationCenterModal from './components/G5IntegrationCenterModal';
 import AssociationLogo from './components/AssociationLogo';
 import HeroBannerEditorModal from './components/HeroBannerEditorModal';
 
-type ActiveTab = 'home' | 'about' | 'projects' | 'news' | 'community' | 'donation' | 'dev' | 'admin';
+type ActiveTab = 'home' | 'about' | 'projects' | 'news' | 'community' | 'donation' | 'admin';
 
 interface SearchItem {
   id: string;
@@ -672,6 +672,36 @@ export default function App() {
   // Effects for synching with localStorage
   useEffect(() => {
     localStorage.setItem('bukmin_hero_slides', JSON.stringify(heroSlides));
+
+    // 1. Sync backend SQLite with slide updates
+    fetch("/api/settings/slides", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ slides: heroSlides })
+    }).catch(err => console.error("Local SQLite slides sync error:", err));
+
+    // 2. Sync immediately with Supabase table if it exists
+    const syncToSupabase = async () => {
+      try {
+        const rows = heroSlides.map(s => ({
+          id: s.id,
+          imageUrl: s.imageUrl,
+          badge: s.badge,
+          title: s.title,
+          subTitle: s.subTitle
+        }));
+
+        const { error } = await supabase.from('slides').upsert(rows);
+        if (error) {
+          console.warn("Supabase live slides sync warning:", error.message);
+        } else {
+          console.log("Supabase live slides sync success!");
+        }
+      } catch (sbErr) {
+        console.error("Supabase write exception for slides:", sbErr);
+      }
+    };
+    syncToSupabase();
   }, [heroSlides]);
 
   useEffect(() => {
@@ -965,7 +995,6 @@ export default function App() {
     { tab: 'about', title: '설립 취지 & 인사말', desc: '자유를 넘어선 희망의 시작', highlight: '소개 바로가기' },
     { tab: 'projects', title: '권익 옹호 종합 사업', desc: '무료 법률 보호 및 정착 멘토', highlight: '사업 살펴보기' },
     { tab: 'donation', title: '투명 전산 후원 납부', desc: '농협 계좌 복사 및 서명 증서', highlight: '동참 바로가기' },
-    { tab: 'dev', title: 'PHP / MySQL 개발 센터', desc: 'JM 설계 및 DB SQL', highlight: '개발자 자료실' },
   ];
 
   const filteredSearchItems = searchRepository.filter((item) => {
@@ -1575,23 +1604,19 @@ export default function App() {
                 <p className="text-xs text-gray-500 font-semibold mt-0.5">원하시는 중앙회 행정과 소통 마당으로 즉시 연대하십시오.</p>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {quickLinks.map((link, idx) => {
                   const gradient = idx === 0 
                     ? 'hover:border-blue-300 bg-blue-50/10' 
                     : idx === 1 
                       ? 'hover:border-teal-300 bg-teal-50/10' 
-                      : idx === 2 
-                        ? 'hover:border-rose-300 bg-rose-50/10' 
-                        : 'hover:border-emerald-300 bg-emerald-50/10';
+                      : 'hover:border-rose-300 bg-rose-50/10';
                   
                   const btnColor = idx === 0 
                     ? 'bg-blue-600 text-white' 
                     : idx === 1 
                       ? 'bg-teal-600 text-white' 
-                      : idx === 2 
-                        ? 'bg-rose-600 text-white' 
-                        : 'bg-emerald-600 text-white';
+                      : 'bg-rose-600 text-white';
 
                   return (
                     <div
@@ -1649,10 +1674,6 @@ export default function App() {
 
         {activeTab === 'donation' && (
           <DonationSection />
-        )}
-
-        {activeTab === 'dev' && (
-          <DevCenter />
         )}
 
         {activeTab === 'admin' && (
@@ -1714,7 +1735,6 @@ export default function App() {
               <ul className="space-y-1.5 text-[11px]">
                 <li><button onClick={() => navigateTo('community')} className="hover:text-blue-500">자유게시판</button></li>
                 <li><button onClick={() => navigateTo('donation')} className="hover:text-blue-500">안내 및 사용처</button></li>
-                <li><button onClick={() => navigateTo('dev')} className="hover:text-blue-500">개발 연계 DB</button></li>
               </ul>
             </div>
           </div>
@@ -1732,15 +1752,6 @@ export default function App() {
                 id="footer-admin-portal-link"
               >
                 <Shield className="w-2.5 h-2.5 text-gray-300 hover:text-blue-500" /> 관리자
-              </button>
-              <span className="text-gray-300 font-bold">:</span>
-              <button 
-                onClick={() => navigateTo('dev')}
-                className="hover:text-blue-600 font-bold transition-all cursor-pointer bg-transparent border-none p-0 inline-flex text-gray-400/40 hover:text-blue-600"
-                id="footer-dev-portal-secret-link"
-                title="개발센터 비밀포탈"
-              >
-                일
               </button>
             </div>
             
