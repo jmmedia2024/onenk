@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, Image as ImageIcon, Check, ArrowUp, ArrowDown, Plus, Trash2, ArrowLeftRight, Heart, ExternalLink, HelpCircle } from 'lucide-react';
+import { X, Sparkles, Image as ImageIcon, Check, ArrowUp, ArrowDown, Plus, Trash2, ArrowLeftRight, Heart, ExternalLink, HelpCircle, Upload } from 'lucide-react';
 
 export interface HeroSlide {
   id: number;
@@ -63,6 +63,7 @@ export default function HeroBannerEditorModal({
   const [localSlides, setLocalSlides] = useState<HeroSlide[]>(() => [...slides]);
   const [selectedSlideId, setSelectedSlideId] = useState<number>(slides[0]?.id || 1);
   const [isSavedNotify, setIsSavedNotify] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   if (!isOpen) return null;
 
@@ -72,6 +73,51 @@ export default function HeroBannerEditorModal({
     setLocalSlides(prev =>
       prev.map(s => (s.id === selectedSlideId ? { ...s, [field]: value } : s))
     );
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleFileProcess = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert("이미지 파일만 업로드할 수 있습니다.");
+      return;
+    }
+    // High premium check for file size (e.g. limit to 5MB to keep base64 storage healthy)
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기가 너무 큽니다. 5MB 이하의 이미지만 업로드 부탁드립니다.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        handleUpdateField('imageUrl', e.target.result as string);
+      }
+    };
+    reader.onerror = () => {
+      alert("파일 로드 중 문제가 발생했습니다.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileProcess(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileProcess(e.target.files[0]);
+    }
   };
 
   const handleSelectPreset = (url: string) => {
@@ -345,6 +391,46 @@ export default function HeroBannerEditorModal({
                       <ExternalLink className="w-4 h-4" />
                     </a>
                   )}
+                </div>
+
+                {/* Direct Image File Upload Section (Drag & Drop + Input Select) */}
+                <div className="w-full mt-2" id="hero-custom-file-upload-zone">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center transition-all ${
+                      isDragging
+                        ? 'border-blue-500 bg-blue-50/50 scale-[0.99] shadow-inner'
+                        : 'border-slate-200 hover:border-blue-400 bg-slate-50/40 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Upload className={`w-8 h-8 ${isDragging ? 'text-blue-500 animate-bounce' : 'text-slate-400'}`} />
+                    <p className="text-xs font-bold text-slate-800 mt-2">
+                      {isDragging ? '이미지를 이곳에 내려놓으세요!' : '내 컴퓨터의 이미지 파일을 드래그하여 업로드'}
+                    </p>
+                    <p className="text-[10px] text-gray-400 mt-1 select-none">
+                      또는 아래 버튼을 클릭하여 이미지를 직접 지정할 수 있습니다. (최대 5MB)
+                    </p>
+                    
+                    <label className="mt-3 inline-flex items-center gap-1.5 px-4 py-1.5 text-[11px] font-black bg-blue-600 hover:bg-blue-700 text-white rounded-lg cursor-pointer transition shadow-2xs">
+                      <Plus className="w-3.5 h-3.5" />
+                      내 컴퓨터에서 찾기
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileChange}
+                      />
+                    </label>
+
+                    {currentSlide.imageUrl.startsWith('data:image') && (
+                      <div className="mt-2.5 px-2 py-0.5 bg-green-50 border border-green-100 text-green-700 font-bold text-[9px] rounded flex items-center gap-1">
+                        <Check className="w-3 h-3 text-green-600" />
+                        <span>직접 업로드 이미지 정상 적용됨</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

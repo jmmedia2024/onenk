@@ -32,10 +32,14 @@ export const updateSupabaseClient = (url: string, key: string) => {
   internalClient = createClient(config.url, config.key);
 };
 
-// Proxied supabase export to permit hot swaps of host endpoint
+// Proxied supabase export to permit hot swaps of host endpoint while preserving correct "this" binding
 export const supabase = new Proxy({} as any, {
   get(target, prop) {
-    return (internalClient as any)[prop];
+    const val = (internalClient as any)[prop];
+    if (typeof val === 'function') {
+      return val.bind(internalClient);
+    }
+    return val;
   }
 });
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
+import { supabase } from '../supabase';
 
 interface Partner {
   id: string;
@@ -105,6 +106,17 @@ export const PartnerSlide: React.FC = () => {
 
   // Poll real backend partners database list live
   const fetchPartners = async () => {
+    try {
+      // First try to fetch directly from Supabase for real-time live synchronization
+      const { data: sbData, error: sbError } = await supabase.from('partners').select('*').order('name', { ascending: true });
+      if (!sbError && sbData && sbData.length > 0) {
+        setPartners(sbData);
+        return;
+      }
+    } catch (sbErr) {
+      console.warn("[Partners Supabase Fetch Warn] Fallback to SQLite:", sbErr);
+    }
+
     try {
       const res = await fetch("/api/partners");
       const data = await res.json();

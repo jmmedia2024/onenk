@@ -158,6 +158,17 @@ export default function AdminSection({
 
   const fetchPartnersList = async () => {
     try {
+      // Fetch directly from Supabase first for absolute live real-time sync in Admin view
+      const { data: sbData, error: sbError } = await supabase.from('partners').select('*').order('name', { ascending: true });
+      if (!sbError && sbData && sbData.length > 0) {
+        setPartners(sbData);
+        return;
+      }
+    } catch (sbErr) {
+      console.warn("[AdminSection partners load] Supabase failed, fallback to local SQLite:", sbErr);
+    }
+
+    try {
       const res = await fetch("/api/partners");
       const data = await res.json();
       if (data && data.success) {

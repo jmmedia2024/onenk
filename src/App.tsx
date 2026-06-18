@@ -779,7 +779,7 @@ export default function App() {
   const [registerErrorMsg, setRegisterErrorMsg] = useState('');
   const [isRegisterSuccess, setIsRegisterSuccess] = useState(false);
 
-  // Auto recovery from active session on mount
+  // Auto recovery from active session on mount & live slides sync from Supabase
   useEffect(() => {
     const storedLoggedIn = localStorage.getItem('bukmin_is_logged_in') === 'true';
     const storedProfile = localStorage.getItem('bukmin_user_profile');
@@ -792,6 +792,32 @@ export default function App() {
         console.warn('Profile parse error:', e);
       }
     }
+
+    // Live Slides Database Fetch directly from Supabase to keep home banners fully synchronized
+    const loadMainSlides = async () => {
+      try {
+        const { data: sbSlides, error } = await supabase.from('slides').select('*').order('id', { ascending: true });
+        if (!error && sbSlides && sbSlides.length > 0) {
+          console.log('[Supabase Mount Sync] Synchronized slides successfully:', sbSlides);
+          setHeroSlides(sbSlides);
+          return;
+        }
+      } catch (err) {
+        console.warn('[Supabase slides load warn] Fallback to local:', err);
+      }
+
+      // SQLite Fallback
+      try {
+        const res = await fetch("/api/settings/slides");
+        const data = await res.json();
+        if (data && data.success && Array.isArray(data.slides) && data.slides.length > 0) {
+          setHeroSlides(data.slides);
+        }
+      } catch (sqliteErr) {
+        console.error("Local SQLite slides fetch error:", sqliteErr);
+      }
+    };
+    loadMainSlides();
   }, []);
 
   // Real-time remote login check
